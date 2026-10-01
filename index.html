@@ -1,0 +1,1526 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="比較兩個日內交易策略的單筆風險、盈虧比、逐單複利與最大回撤。">
+  <title>日內交易風險與複利模型</title>
+  <style>
+    :root {
+      --ink: #102a43;
+      --ink-2: #334e68;
+      --muted: #5b7083;
+      --paper: #f6f8fb;
+      --surface: #ffffff;
+      --line: #d9e2ec;
+      --navy: #12304a;
+      --blue: #2266d6;
+      --blue-soft: #e9f1ff;
+      --green: #147d4a;
+      --green-soft: #e8f6ef;
+      --red: #b42318;
+      --red-soft: #fff0ee;
+      --amber: #8a5a00;
+      --amber-soft: #fff6db;
+      --shadow: 0 18px 50px rgba(16, 42, 67, .08);
+      --radius: 18px;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      --sans: "Avenir Next", Avenir, "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        linear-gradient(90deg, rgba(18, 48, 74, .025) 1px, transparent 1px) 0 0 / 72px 72px,
+        linear-gradient(rgba(18, 48, 74, .025) 1px, transparent 1px) 0 0 / 72px 72px,
+        var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.55;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    a { color: var(--blue); text-underline-offset: 3px; }
+    :focus-visible { outline: 3px solid rgba(34, 102, 214, .38); outline-offset: 3px; }
+    button, input, summary, a { scroll-margin-top: 82px; }
+    .skip-link { position: fixed; z-index: 99; top: 8px; left: 8px; padding: 10px 14px; border-radius: 8px; background: white; color: var(--navy); font-weight: 800; transform: translateY(-160%); }
+    .skip-link:focus { transform: translateY(0); }
+
+    .topbar {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .14);
+      background: rgba(18, 48, 74, .96);
+      color: white;
+      backdrop-filter: blur(12px);
+    }
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: min(1420px, calc(100% - 40px));
+      min-height: 58px;
+      margin: 0 auto;
+    }
+    .brand { display: flex; align-items: baseline; gap: 12px; }
+    .brand strong { font-size: 16px; letter-spacing: .04em; }
+    .brand span { color: #c7d9e8; font-family: var(--mono); font-size: 12px; }
+    .top-actions { display: flex; gap: 8px; }
+
+    .btn {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 14px;
+      background: white;
+      color: var(--ink);
+      font-weight: 700;
+      transition: transform .16s ease, background .16s ease, border-color .16s ease;
+    }
+    .btn:hover { border-color: #9fb3c8; background: #f8fbff; transform: translateY(-1px); }
+    .btn-primary { border-color: #3c7be0; background: #e9f1ff; color: #174ea6; }
+    .topbar .btn { min-height: 44px; border-color: rgba(255,255,255,.3); background: transparent; color: white; padding: 7px 11px; }
+    .topbar .btn:hover { background: rgba(255,255,255,.1); }
+
+    main { width: min(1420px, calc(100% - 40px)); margin: 0 auto; padding: 34px 0 64px; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);
+      gap: 28px;
+      align-items: end;
+      padding: 28px 0 30px;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow { margin: 0 0 8px; color: var(--blue); font-family: var(--mono); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { max-width: 820px; margin: 0; color: var(--navy); font-size: clamp(36px, 5vw, 70px); line-height: .98; letter-spacing: -.045em; }
+    .hero p { max-width: 720px; margin: 20px 0 0; color: var(--ink-2); font-size: 17px; }
+    .formula-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #b6c9dc;
+      border-radius: var(--radius);
+      padding: 22px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .formula-card::before { position: absolute; inset: 0 auto 0 0; width: 7px; background: var(--blue); content: ""; }
+    .formula-card small { color: var(--muted); font-weight: 700; }
+    .formula { margin-top: 10px; color: var(--navy); font-family: var(--mono); font-size: clamp(17px, 2vw, 24px); font-weight: 750; }
+    .formula-note { margin-top: 10px; color: var(--muted); font-size: 13px; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 24px;
+      margin-top: 26px;
+    }
+    .sidebar { align-self: start; position: sticky; top: 82px; }
+    .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: 0 10px 32px rgba(16,42,67,.055); }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 20px; border-bottom: 1px solid var(--line); }
+    .panel-head h2, .panel-head h3 { margin: 0; color: var(--navy); font-size: 16px; }
+    .panel-kicker { color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; }
+    .panel-body { padding: 20px; }
+
+    .field-grid { display: grid; gap: 16px; }
+    .field label { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 7px; color: var(--ink-2); font-size: 13px; font-weight: 750; }
+    .field label span { color: var(--muted); font-family: var(--mono); font-weight: 500; }
+    .input-wrap { position: relative; }
+    .input-wrap .prefix, .input-wrap .suffix { position: absolute; top: 50%; color: var(--muted); font-family: var(--mono); font-size: 13px; transform: translateY(-50%); pointer-events: none; }
+    .input-wrap .prefix { left: 12px; }
+    .input-wrap .suffix { right: 12px; }
+    input[type="number"] {
+      width: 100%; min-height: 46px; border: 1px solid #bcccdc; border-radius: 10px; padding: 10px 38px 10px 12px; background: #fbfdff; color: var(--ink); font-family: var(--mono); font-size: 15px; font-weight: 700;
+    }
+    .has-prefix input { padding-left: 27px; }
+    input[type="number"]:hover { border-color: #829ab1; }
+    input[type="number"]:focus { border-color: var(--blue); background: white; }
+    input[type="number"]:disabled { border-color: #d9e2ec; background: #edf2f7; color: #7b8fa1; cursor: not-allowed; }
+    .range-row { display: grid; grid-template-columns: 1fr 68px; gap: 10px; align-items: center; }
+    input[type="range"] { width: 100%; accent-color: var(--blue); }
+    .mini-output { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; background: var(--blue-soft); color: #174ea6; font-family: var(--mono); font-size: 12px; font-weight: 800; text-align: center; }
+    .sidebar-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+
+    .warning { margin-top: 16px; border-left: 4px solid #d99b18; border-radius: 6px; padding: 12px 13px; background: var(--amber-soft); color: #624400; font-size: 12.5px; }
+    .content { min-width: 0; display: grid; gap: 20px; }
+    .selected-strip { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-radius: 12px; background: var(--navy); color: white; }
+    .selected-strip strong { font-family: var(--mono); }
+    .selected-strip span { color: #c7d9e8; font-size: 13px; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: white; box-shadow: 0 10px 32px rgba(16,42,67,.05); }
+    .kpi { min-height: 118px; padding: 19px; border-right: 1px solid var(--line); }
+    .kpi:last-child { border-right: 0; }
+    .kpi-label { color: var(--muted); font-size: 12px; font-weight: 750; letter-spacing: .02em; }
+    .kpi-value { margin-top: 9px; color: var(--navy); font-family: var(--mono); font-size: clamp(22px, 2.4vw, 34px); font-weight: 800; letter-spacing: -.04em; }
+    .kpi-sub { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+
+    .chart-wrap { position: relative; min-height: 360px; padding: 10px 16px 16px; }
+    #equityChart { display: block; width: 100%; height: 330px; border-radius: 12px; background: linear-gradient(180deg, #fbfdff, #f6f9fc); }
+    .chart-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-top: 8px; color: var(--muted); font-size: 12px; }
+    .legend { display: inline-flex; align-items: center; gap: 8px; }
+    .legend::before { width: 22px; height: 3px; border-radius: 3px; background: var(--blue); content: ""; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { padding: 10px 12px; border-bottom: 1px solid #9fb3c8; background: #eef4f8; color: var(--ink-2); font-size: 11px; letter-spacing: .025em; text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    td { padding: 11px 12px; border-bottom: 1px solid #edf1f5; color: var(--ink-2); font-family: var(--mono); text-align: right; white-space: nowrap; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #f8fbff; }
+    .scenario-button { min-height: 44px; border: 0; border-radius: 8px; padding: 7px 9px; background: transparent; color: var(--ink); font-family: var(--sans); font-weight: 800; }
+    .scenario-button:hover { background: var(--blue-soft); color: #174ea6; }
+    tr[aria-selected="true"] { background: var(--blue-soft); box-shadow: inset 4px 0 var(--blue); }
+    tr[aria-selected="true"] .scenario-button { color: #174ea6; }
+    .bar-cell { position: relative; overflow: hidden; }
+    .bar-cell::before { position: absolute; z-index: 0; inset: 5px auto 5px 0; width: var(--bar, 0%); border-radius: 4px; background: rgba(20,125,74,.12); content: ""; }
+    .bar-cell span { position: relative; z-index: 1; }
+
+    .outcome-tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+    .outcome-tools .btn { min-height: 44px; padding: 8px 11px; font-size: 12px; }
+    .outcomes { display: grid; grid-template-columns: repeat(10, minmax(44px,1fr)); gap: 8px; padding: 18px 20px 20px; }
+    .trade-chip { min-height: 48px; border: 1px solid #bcccdc; border-radius: 9px; background: white; color: var(--ink); font-family: var(--mono); font-weight: 850; }
+    .trade-chip small { display: block; color: var(--muted); font-size: 9px; font-weight: 600; }
+    .trade-chip.win { border-color: #8fc9aa; background: var(--green-soft); color: var(--green); }
+    .trade-chip.loss { border-color: #efb3ad; background: var(--red-soft); color: var(--red); }
+    .path-status { margin-left: auto; align-self: center; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+
+    .dual { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .risk-ladder { display: grid; gap: 0; }
+    .risk-step { display: grid; grid-template-columns: 118px 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+    .risk-step:last-child { border-bottom: 0; }
+    .risk-range { color: var(--navy); font-family: var(--mono); font-weight: 850; }
+    .risk-step strong { display: block; margin-bottom: 3px; color: var(--ink); font-size: 13px; }
+    .risk-step p { margin: 0; color: var(--muted); font-size: 12.5px; }
+
+    details { border-top: 1px solid var(--line); }
+    summary { padding: 15px 20px; color: var(--ink-2); font-weight: 800; cursor: pointer; }
+    .details-body { padding: 0 20px 20px; color: var(--ink-2); font-size: 13px; }
+    .details-body ul { margin: 0; padding-left: 20px; }
+    .details-body li + li { margin-top: 8px; }
+    .source-list { display: grid; gap: 9px; margin-top: 14px; }
+    footer { margin-top: 34px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
+
+    @media (max-width: 1050px) {
+      .workspace { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .field-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .sidebar-actions { grid-template-columns: repeat(2, 160px); }
+    }
+    @media (max-width: 820px) {
+      .hero { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .kpi:nth-child(2) { border-right: 0; }
+      .kpi:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .dual { grid-template-columns: 1fr; }
+      .outcomes { grid-template-columns: repeat(5, minmax(44px,1fr)); }
+    }
+    @media (max-width: 620px) {
+      .topbar-inner, main { width: min(100% - 24px, 1420px); }
+      .brand span { display: none; }
+      .topbar .btn { font-size: 12px; }
+      main { padding-top: 18px; }
+      .hero { padding-top: 18px; }
+      h1 { font-size: clamp(38px, 13vw, 58px); }
+      .field-grid { grid-template-columns: 1fr; }
+      .sidebar-actions { grid-template-columns: 1fr 1fr; }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .kpi { border-right: 0; border-bottom: 1px solid var(--line); }
+      .kpi:last-child { border-bottom: 0; }
+      .outcomes { grid-template-columns: repeat(4, minmax(44px,1fr)); padding-inline: 14px; }
+      .outcome-tools { padding-inline: 14px; }
+      .path-status { flex-basis: 100%; margin-left: 0; }
+      .risk-step { grid-template-columns: 1fr; gap: 4px; }
+      #equityChart { height: 280px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+    @media print {
+      .topbar, .sidebar-actions, .outcome-tools { display: none; }
+      body { background: white; }
+      main { width: 100%; padding: 0; }
+      .workspace { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .panel, .kpi-grid, .formula-card { box-shadow: none; break-inside: avoid; }
+    }
+
+    /* Simplified working surface */
+    body { background: #f4f7fa; }
+    .topbar-inner, main { width: min(1180px, calc(100% - 32px)); }
+    .topbar { position: static; background: var(--navy); }
+    .brand strong { font-size: 15px; }
+    main { padding: 24px 0 52px; }
+    .compact-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 18px; }
+    .compact-intro h1 { margin: 0; font-size: clamp(26px, 4vw, 38px); line-height: 1.1; letter-spacing: -.03em; }
+    .compact-intro p { max-width: 600px; margin: 0; color: var(--muted); font-size: 14px; text-align: right; }
+    .mode-switch { display: inline-grid; grid-template-columns: repeat(2, minmax(140px, 1fr)); gap: 4px; margin-bottom: 16px; border: 1px solid #b8c7d5; border-radius: 12px; padding: 4px; background: #e9eef4; }
+    .mode-button { min-height: 44px; border: 0; border-radius: 8px; padding: 9px 16px; background: transparent; color: var(--ink-2); font-weight: 800; }
+    .mode-button[aria-pressed="true"] { background: white; color: #174ea6; box-shadow: 0 2px 8px rgba(16,42,67,.12); }
+    .mode-button:hover { color: var(--blue); }
+    .quick-controls { display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)) minmax(250px, 1.25fr) auto; gap: 14px; align-items: end; padding: 16px; }
+    .quick-controls .field label, .strategy-inputs .field label { font-size: 14px; }
+    .quick-actions { display: flex; gap: 8px; }
+    .quick-actions .btn { white-space: nowrap; }
+    .quick-actions .btn { min-height: 46px; }
+    .sizing-control { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 70px; border: 1px solid #9fb8d1; border-radius: 12px; padding: 11px 13px; background: #f3f7ff; color: var(--ink-2); cursor: pointer; }
+    .sizing-control:hover { border-color: var(--blue); background: #edf4ff; }
+    .sizing-copy strong { display: block; color: var(--navy); font-size: 14px; }
+    .sizing-copy span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .switch-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .switch-track { position: relative; flex: 0 0 48px; width: 48px; height: 28px; border: 1px solid #91a8bd; border-radius: 999px; background: #d7e0e8; transition: background .16s ease, border-color .16s ease; }
+    .switch-track::after { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: white; box-shadow: 0 2px 5px rgba(16,42,67,.22); content: ""; transition: transform .16s ease; }
+    .switch-input:checked + .switch-track { border-color: var(--blue); background: var(--blue); }
+    .switch-input:checked + .switch-track::after { transform: translateX(20px); }
+    .switch-input:focus-visible + .switch-track { outline: 3px solid rgba(34,102,214,.38); outline-offset: 3px; }
+    .switch-input:disabled + .switch-track { opacity: .58; cursor: wait; }
+    .model-note { margin: 9px 2px 20px; color: var(--muted); font-size: 12px; }
+    .strategy-config { margin-bottom: 18px; }
+    .strategy-section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 2px 10px; }
+    .strategy-section-head h2 { margin: 0; color: var(--navy); font-size: 15px; }
+    .sync-control { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink-2); font-size: 13px; cursor: pointer; }
+    .sync-control input { width: 18px; height: 18px; accent-color: var(--blue); }
+    .strategy-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .strategy-input-card { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: white; }
+    .strategy-input-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .strategy-input-head strong { color: var(--navy); font-size: 15px; }
+    .strategy-input-head span { color: var(--muted); font-size: 12px; }
+    .strategy-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .confidence-settings { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; }
+    .confidence-settings summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 11px 14px; list-style: none; color: var(--ink-2); font-size: 13px; font-weight: 700; cursor: pointer; }
+    .confidence-settings summary::-webkit-details-marker { display: none; }
+    .confidence-settings summary::after { color: var(--blue); font-family: var(--mono); font-size: 17px; content: "+"; }
+    .confidence-settings[open] summary::after { content: "−"; }
+    .confidence-content { border-top: 1px solid var(--line); padding: 14px; }
+    .confidence-intro { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+    .confidence-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .confidence-card { min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: white; }
+    .confidence-card .field { max-width: 220px; }
+    .confidence-output { display: block; min-height: 42px; margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .confidence-output strong { display: block; color: var(--ink); font-family: var(--mono); font-size: 14px; }
+    .confidence-output .edge-negative { font-weight: 700; }
+    .confidence-output .edge-positive { font-weight: 700; }
+    .conservative-control { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .conservative-control label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink-2); font-size: 13px; font-weight: 700; cursor: pointer; }
+    .conservative-control input { width: 18px; height: 18px; accent-color: var(--blue); }
+    .conservative-status { margin: 0; color: var(--muted); font-size: 11px; text-align: right; }
+    .results { display: grid; gap: 14px; }
+    .scenario-picker { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: white; }
+    .scenario-picker-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 11px; }
+    .scenario-picker-head strong { color: var(--navy); font-size: 14px; }
+    .scenario-picker-head span { color: var(--muted); font-size: 12px; }
+    .scenario-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .scenario-tab { min-height: 138px; border: 1px solid var(--line); border-radius: 11px; padding: 14px; background: #f8fafc; color: var(--ink-2); text-align: left; }
+    .scenario-tab:first-child { border-top: 3px solid var(--blue); }
+    .scenario-tab:last-child { border-top: 3px dashed #c56b1a; }
+    .strategy-result-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .strategy-result-head strong { color: var(--navy); font-size: 15px; }
+    .strategy-result-head span { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+    .strategy-result-label { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; }
+    .strategy-result-value { display: block; margin-top: 2px; color: var(--ink); font-family: var(--mono); font-size: clamp(21px, 2.5vw, 28px); font-weight: 800; letter-spacing: -.03em; }
+    .strategy-result-metrics { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+    .strategy-result-foot { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; }
+    .strategy-edge { display: block; margin-top: 7px; color: var(--ink-2); font-size: 12px; }
+    .risk-alert { color: var(--red); font-weight: 800; }
+    .edge-negative { color: var(--red); }
+    .edge-positive { color: var(--green); }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+    .legend.strategy-one::before { background: var(--blue); }
+    .legend.strategy-two::before { height: 0; border-top: 3px dashed #c56b1a; background: transparent; }
+    .kpi-grid { box-shadow: none; }
+    .kpi { min-height: 100px; padding: 15px 17px; }
+    .kpi-label { font-size: 14px; }
+    .kpi-value { margin-top: 6px; font-size: clamp(21px, 2.3vw, 30px); }
+    .chart-wrap { min-height: 300px; padding: 6px 14px 14px; }
+    #equityChart { height: 270px; touch-action: pan-y; cursor: crosshair; }
+    .chart-tooltip { position: absolute; z-index: 3; top: 18px; width: min(230px, calc(100% - 24px)); border: 1px solid #9fb3c8; border-radius: 10px; padding: 10px 12px; background: rgba(255,255,255,.97); box-shadow: 0 10px 26px rgba(16,42,67,.16); color: var(--ink-2); font-size: 12px; pointer-events: none; }
+    .chart-tooltip[hidden] { display: none; }
+    .chart-tooltip strong { display: block; margin-bottom: 5px; color: var(--navy); }
+    .chart-tooltip span { display: block; font-family: var(--mono); }
+    .chart-tooltip span + span { margin-top: 3px; }
+    .panel { box-shadow: none; }
+    .panel-head { padding: 14px 17px; }
+    .disclosure-stack { margin-top: 18px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: white; }
+    .disclosure-stack details { border: 0; border-bottom: 1px solid var(--line); }
+    .disclosure-stack details:last-child { border-bottom: 0; }
+    .disclosure-stack summary { position: relative; min-height: 54px; padding: 15px 54px 15px 18px; list-style: none; color: var(--ink); font-size: 14px; }
+    .disclosure-stack summary::-webkit-details-marker { display: none; }
+    .disclosure-stack summary::after { position: absolute; top: 50%; right: 18px; color: var(--blue); font-family: var(--mono); font-size: 18px; content: "+"; transform: translateY(-50%); }
+    .disclosure-stack details[open] > summary::after { content: "−"; }
+    .disclosure-stack details[open] > summary { background: #f8fbff; }
+    .disclosure-content { padding: 0 18px 18px; }
+    .disclosure-content .dual { padding-top: 4px; }
+    .disclosure-content .panel { border-radius: 12px; }
+    .disclosure-content .outcomes { padding-inline: 0; }
+    .disclosure-content .outcome-tools { padding: 0 0 14px; }
+    .disclosure-content .outcome-tools .btn { font-size: 14px; }
+    .disclosure-content td { font-size: 14px; }
+    .disclosure-content th { font-size: 12px; }
+    .method-copy { color: var(--ink-2); font-size: 14px; }
+    .method-copy ul { margin: 0; padding-left: 20px; }
+    .method-copy li + li { margin-top: 8px; }
+    .stress-intro { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 12px; color: var(--muted); font-size: 12px; }
+    .stress-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .stress-card { border: 1px solid var(--line); border-radius: 12px; padding: 15px; background: #f8fafc; }
+    .stress-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .stress-card-head strong { color: var(--navy); font-size: 14px; }
+    .stress-card-head span { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+    .stress-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .stress-metric { min-width: 0; }
+    .stress-metric small { display: block; color: var(--muted); font-size: 11px; }
+    .stress-metric strong { display: block; margin-top: 3px; color: var(--ink); font-family: var(--mono); font-size: 16px; overflow-wrap: anywhere; }
+    .stress-metric strong.risk-alert { color: var(--red); }
+    .stress-metric .metric-note { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .stress-metric .metric-note.risk-alert { color: var(--red); font-weight: 700; }
+    .conservative-stress { grid-column: 1 / -1; border-top: 1px dashed #aab9c7; padding-top: 10px; }
+    .conservative-stress strong { display: block; color: var(--navy); font-size: 12px; }
+    .conservative-stress span { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .stress-note { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+    .reverse-mode { display: grid; gap: 14px; }
+    .reverse-controls { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)) auto; gap: 14px; align-items: end; padding: 16px; }
+    .reverse-controls .btn { min-height: 46px; white-space: nowrap; }
+    select, input[type="text"] { width: 100%; min-height: 46px; border: 1px solid #bcccdc; border-radius: 10px; padding: 10px 12px; background: #fbfdff; color: var(--ink); font-size: 15px; font-weight: 700; }
+    select:focus, input[type="text"]:focus { border-color: var(--blue); background: white; }
+    .reverse-explainer { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 12px; }
+    .reverse-status { min-height: 22px; margin: 0 2px; color: var(--muted); font-size: 12px; }
+    .reverse-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .reverse-card { border: 1px solid var(--line); border-top: 3px solid var(--blue); border-radius: 12px; padding: 16px; background: white; }
+    .reverse-card:nth-child(2) { border-top-color: #c56b1a; border-top-style: dashed; }
+    .reverse-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .reverse-card-head strong { color: var(--navy); font-size: 15px; }
+    .reverse-card-head span { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+    .reverse-risk-label { display: block; margin-top: 14px; color: var(--muted); font-size: 12px; }
+    .reverse-risk-value { display: block; margin-top: 2px; color: var(--ink); font-family: var(--mono); font-size: clamp(26px, 3vw, 36px); font-weight: 850; }
+    .reverse-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    .reverse-metric small { display: block; color: var(--muted); font-size: 11px; }
+    .reverse-metric strong { display: block; margin-top: 2px; color: var(--ink); font-family: var(--mono); font-size: 14px; }
+    .reverse-note { margin: 13px 0 0; color: var(--muted); font-size: 12px; }
+    .preset-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) auto; gap: 10px; align-items: end; }
+    .preset-toolbar .btn { min-height: 46px; }
+    .preset-status { min-height: 20px; margin: 9px 0 0; color: var(--muted); font-size: 12px; }
+    .preset-list { display: grid; gap: 8px; margin-top: 12px; }
+    .preset-empty { border: 1px dashed #b8c7d5; border-radius: 10px; padding: 13px; color: var(--muted); font-size: 12px; text-align: center; }
+    .preset-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; background: #f8fafc; }
+    .preset-copy { min-width: 0; }
+    .preset-copy strong { display: block; overflow: hidden; color: var(--navy); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .preset-copy span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .preset-actions { display: flex; gap: 6px; }
+    .preset-actions .btn { min-height: 40px; padding: 7px 10px; font-size: 12px; }
+    .btn-danger { border-color: #efb3ad; color: var(--red); }
+    .risk-plan-intro { margin: 0 0 13px; color: var(--muted); font-size: 12px; }
+    .risk-plan-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .risk-plan-fields .field { min-width: 0; }
+    .risk-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+    .risk-plan-card { border: 1px solid var(--line); border-radius: 11px; padding: 13px; background: #f8fafc; }
+    .risk-plan-card > strong { display: block; color: var(--navy); font-size: 14px; }
+    .risk-plan-list { display: grid; gap: 7px; margin: 10px 0 0; padding: 0; list-style: none; }
+    .risk-plan-list li { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+    .risk-plan-list b { color: var(--ink-2); font-family: var(--mono); text-align: right; }
+    .risk-plan-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; }
+    footer { margin-top: 22px; }
+
+    @media (max-width: 900px) {
+      .quick-controls { grid-template-columns: repeat(2, 1fr); }
+      .sizing-control { grid-column: 1 / -1; }
+      .quick-actions { grid-column: 1 / -1; }
+      .reverse-controls { grid-template-columns: repeat(2, 1fr); }
+      .reverse-controls .btn { grid-column: 1 / -1; }
+      .scenario-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .strategy-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .strategy-inputs .field:first-child { grid-column: 1 / -1; }
+    }
+    @media (max-width: 640px) {
+      .topbar-inner, main { width: min(100% - 24px, 1180px); }
+      .compact-intro { display: block; }
+      .compact-intro p { margin-top: 8px; text-align: left; }
+      .quick-controls { grid-template-columns: 1fr; }
+      .quick-actions { grid-column: auto; }
+      .quick-actions .btn { flex: 1; }
+      .topbar .btn { font-size: 14px; }
+      input[type="number"], input[type="text"], select { font-size: 16px; }
+      .strategy-section-head { align-items: flex-start; }
+      .strategy-settings, .strategy-inputs, .scenario-tabs, .confidence-grid, .risk-plan-fields, .risk-plan-grid { grid-template-columns: 1fr; }
+      .stress-grid, .stress-metrics, .reverse-grid, .reverse-controls { grid-template-columns: 1fr; }
+      .mode-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+      .reverse-controls .btn { grid-column: auto; }
+      .preset-toolbar, .preset-item { grid-template-columns: 1fr; }
+      .preset-actions { width: 100%; }
+      .preset-actions .btn { flex: 1; }
+      .conservative-control { display: block; }
+      .conservative-status { margin-top: 3px; text-align: left; }
+      .scenario-picker-head { display: block; }
+      .scenario-picker-head span { display: block; margin-top: 3px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .kpi { border-right: 1px solid var(--line); }
+      .kpi:nth-child(even) { border-right: 0; }
+      .kpi:nth-child(3) { border-bottom: 0; }
+      #equityChart { height: 240px; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要內容</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><strong>交易風險試算</strong><span id="sizingBrand">逐單複利</span></div>
+      <div class="top-actions">
+        <button class="btn" id="printBtn" type="button">列印</button>
+        <button class="btn" id="csvBtn" type="button">下載 CSV</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="compact-intro" aria-labelledby="page-title">
+      <h1 id="page-title">月度複利與回撤</h1>
+      <p id="pageIntro">共用相同本金與交易筆數，分別設定兩個策略的勝率、風險和盈虧比。</p>
+    </section>
+
+    <nav class="mode-switch" aria-label="模型模式">
+      <button class="mode-button" id="comparisonModeBtn" type="button" aria-pressed="true">策略比較</button>
+      <button class="mode-button" id="reverseModeBtn" type="button" aria-pressed="false">風險反推</button>
+    </nav>
+
+    <section class="quick-controls panel" aria-labelledby="assumption-title">
+      <h2 id="assumption-title" class="sr-only">基本輸入</h2>
+      <div class="field">
+        <label for="capital">本金 <span>USD</span></label>
+        <div class="input-wrap has-prefix"><span class="prefix">$</span><input id="capital" type="number" min="100" step="100" value="10000"></div>
+      </div>
+      <div class="field">
+        <label for="tradeCount">交易筆數 <span>1 至 500</span></label>
+        <input id="tradeCount" type="number" inputmode="numeric" min="1" max="500" step="1" value="20">
+      </div>
+      <label class="sizing-control" for="compoundSizing">
+        <span class="sizing-copy"><strong id="compoundStatus">逐筆複利：已開啟</strong><span id="compoundHint">每筆 1R 依當下帳戶淨值重新計算</span></span>
+        <input class="switch-input" id="compoundSizing" type="checkbox" checked>
+        <span class="switch-track" aria-hidden="true"></span>
+      </label>
+      <div class="quick-actions">
+        <button class="btn btn-primary" id="resetBtn" type="button">恢復基準</button>
+      </div>
+    </section>
+    <p class="model-note" id="roundingNote" role="note">20 筆下，50% 勝率為 10 勝、10 敗，代表路徑的實現勝率為 50%。</p>
+
+    <section class="strategy-config" aria-labelledby="strategy-settings-title">
+      <div class="strategy-section-head">
+        <h2 id="strategy-settings-title">策略設定</h2>
+        <label class="sync-control" for="syncWinRate"><input id="syncWinRate" type="checkbox">同步兩個策略的勝率</label>
+      </div>
+      <div class="strategy-settings">
+        <article class="strategy-input-card">
+        <div class="strategy-input-head"><strong>策略 1</strong><span>自訂條件</span></div>
+        <div class="strategy-inputs">
+          <div class="field">
+            <label for="winRateOne">勝率 <span>歷史估計</span></label>
+            <div class="input-wrap"><input id="winRateOne" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="50"><span class="suffix">%</span></div>
+          </div>
+          <div class="field">
+            <label for="riskOne">單筆風險 <span>帳戶百分比</span></label>
+            <div class="input-wrap"><input id="riskOne" type="number" inputmode="decimal" min="0" max="10" step="0.1" value="1"><span class="suffix">%</span></div>
+          </div>
+          <div class="field">
+            <label for="rrOne">盈虧比 <span>獲利 R</span></label>
+            <div class="input-wrap has-prefix"><span class="prefix">1:</span><input id="rrOne" type="number" inputmode="decimal" min="0.5" max="10" step="0.1" value="2"></div>
+          </div>
+        </div>
+        </article>
+        <article class="strategy-input-card">
+        <div class="strategy-input-head"><strong>策略 2</strong><span>自訂條件</span></div>
+        <div class="strategy-inputs">
+          <div class="field">
+            <label for="winRateTwo">勝率 <span>歷史估計</span></label>
+            <div class="input-wrap"><input id="winRateTwo" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="50"><span class="suffix">%</span></div>
+          </div>
+          <div class="field">
+            <label for="riskTwo">單筆風險 <span>帳戶百分比</span></label>
+            <div class="input-wrap"><input id="riskTwo" type="number" inputmode="decimal" min="0" max="10" step="0.1" value="2"><span class="suffix">%</span></div>
+          </div>
+          <div class="field">
+            <label for="rrTwo">盈虧比 <span>獲利 R</span></label>
+            <div class="input-wrap has-prefix"><span class="prefix">1:</span><input id="rrTwo" type="number" inputmode="decimal" min="0.5" max="10" step="0.1" value="3"></div>
+          </div>
+        </div>
+        </article>
+      </div>
+      <details class="confidence-settings" id="confidenceDetails">
+        <summary>勝率估計範圍（選填）</summary>
+        <div class="confidence-content">
+          <p class="confidence-intro">填入用來估算勝率的歷史交易筆數。系統會顯示 Wilson 95% 區間；0 代表不估算，且不會改動主模擬使用的勝率。</p>
+          <div class="confidence-grid">
+            <article class="confidence-card">
+              <div class="field">
+                <label for="sampleSizeOne">策略 1 歷史樣本 <span>交易筆數</span></label>
+                <input id="sampleSizeOne" type="number" inputmode="numeric" min="0" max="100000" step="1" value="0">
+              </div>
+              <output class="confidence-output" id="confidenceOne" for="winRateOne sampleSizeOne rrOne" aria-live="polite">輸入樣本數後顯示</output>
+            </article>
+            <article class="confidence-card">
+              <div class="field">
+                <label for="sampleSizeTwo">策略 2 歷史樣本 <span>交易筆數</span></label>
+                <input id="sampleSizeTwo" type="number" inputmode="numeric" min="0" max="100000" step="1" value="0">
+              </div>
+              <output class="confidence-output" id="confidenceTwo" for="winRateTwo sampleSizeTwo rrTwo" aria-live="polite">輸入樣本數後顯示</output>
+            </article>
+          </div>
+          <div class="conservative-control">
+            <label for="conservativeScenario"><input id="conservativeScenario" type="checkbox">在壓力測試中加入保守勝率情境</label>
+            <p class="conservative-status" id="conservativeStatus" role="status" aria-live="polite">使用 95% 估計下限，不取代基準勝率。</p>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <div class="results" id="comparisonMode">
+      <section class="scenario-picker" aria-labelledby="scenario-picker-title">
+        <div class="scenario-picker-head">
+          <strong id="scenario-picker-title">雙策略比較</strong>
+          <span id="selectedSummary" aria-live="polite">固定勝敗模擬與機率期望分開顯示</span>
+        </div>
+        <div class="scenario-tabs" id="scenarioTabs" aria-label="兩個策略的計算結果"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="chart-title">
+        <div class="panel-head"><h2 id="chart-title">兩個策略的逐單淨值</h2><span class="panel-kicker" id="chartRange">交易 0 至 20</span></div>
+        <div class="chart-wrap">
+          <canvas id="equityChart" role="img" tabindex="0" aria-label="策略 1 與策略 2 的逐單淨值比較曲線。聚焦後可用左右方向鍵查看每筆資料。"></canvas>
+          <div class="chart-tooltip" id="chartTooltip" role="status" aria-live="polite" hidden></div>
+          <div class="chart-caption">
+            <span class="chart-legend"><span class="legend strategy-one">策略 1 實線</span><span class="legend strategy-two">策略 2 虛線</span></span>
+            <span id="chartText">策略 1 月底 $11,024.37；策略 2 月底 $14,632.53。</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="reverse-mode" id="reverseMode" aria-labelledby="reverse-title" hidden>
+      <div class="reverse-controls panel">
+        <div class="field">
+          <label for="targetDrawdown">可接受最大回撤 <span>1% 至 80%</span></label>
+          <div class="input-wrap"><input id="targetDrawdown" type="number" inputmode="decimal" min="1" max="80" step="1" value="15"><span class="suffix">%</span></div>
+        </div>
+        <div class="field">
+          <label for="reverseCoverage">安全覆蓋比例 <span>模擬月份</span></label>
+          <select id="reverseCoverage">
+            <option value="80">80%</option>
+            <option value="90" selected>90%</option>
+            <option value="95">95%</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="calculateRiskBtn" type="button">計算建議風險</button>
+        <p class="reverse-explainer" id="reverse-title">使用目前兩個策略的固定勝率、盈虧比與交易筆數，反推出讓指定比例的 10,000 次模擬不超過目標回撤的單筆風險上限。</p>
+      </div>
+      <p class="reverse-status" id="reverseStatus" role="status" aria-live="polite">尚未計算。變更策略條件後請重新計算。</p>
+      <div class="reverse-grid" id="reverseResults" aria-live="polite">
+        <article class="reverse-card"><div class="reverse-card-head"><strong>策略 1</strong><span>等待計算</span></div><span class="reverse-risk-label">建議單筆風險上限</span><span class="reverse-risk-value">—</span></article>
+        <article class="reverse-card"><div class="reverse-card-head"><strong>策略 2</strong><span>等待計算</span></div><span class="reverse-risk-label">建議單筆風險上限</span><span class="reverse-risk-value">—</span></article>
+      </div>
+    </section>
+
+    <section class="disclosure-stack" aria-label="詳細設定與說明">
+      <details id="stressDetails" data-mode-only="comparison">
+        <summary>查看蒙地卡羅壓力測試</summary>
+        <div class="disclosure-content">
+          <div class="stress-intro"><span>每個策略模擬 10,000 個月</span><span>相同輸入會得到相同結果</span></div>
+          <div class="stress-grid" id="stressGrid"></div>
+          <p class="stress-note">結果依目前勝率、風險、盈虧比與交易筆數估算。&gt;99.99% 代表 10,000 次模擬全部命中，不是數學上的必然。模型假設每筆交易彼此獨立，未納入交易成本與策略失效。</p>
+        </div>
+      </details>
+      <details id="riskPlanDetails">
+        <summary>設定每日與整體風控計畫</summary>
+        <div class="disclosure-content">
+          <p class="risk-plan-intro">這些規則用來建立停手條件與曝險上限。0 代表關閉該規則；目前不改寫月度模擬路徑。</p>
+          <div class="risk-plan-fields">
+            <div class="field">
+              <label for="dailyLossLimit">每日最大虧損 <span>0% = 關閉</span></label>
+              <div class="input-wrap"><input id="dailyLossLimit" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="3"><span class="suffix">%</span></div>
+            </div>
+            <div class="field">
+              <label for="maxTradesPerDay">每日最多交易 <span>0 = 關閉</span></label>
+              <input id="maxTradesPerDay" type="number" inputmode="numeric" min="0" max="50" step="1" value="3">
+            </div>
+            <div class="field">
+              <label for="stopAfterLosses">連續虧損停手 <span>0 = 關閉</span></label>
+              <input id="stopAfterLosses" type="number" inputmode="numeric" min="0" max="20" step="1" value="3">
+            </div>
+            <div class="field">
+              <label for="maxConcurrentRisk">同時持倉總風險 <span>0% = 關閉</span></label>
+              <div class="input-wrap"><input id="maxConcurrentRisk" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="2"><span class="suffix">%</span></div>
+            </div>
+            <div class="field">
+              <label for="deRiskDrawdown">回撤達到後縮小風險 <span>0% = 關閉</span></label>
+              <div class="input-wrap"><input id="deRiskDrawdown" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="10"><span class="suffix">%</span></div>
+            </div>
+            <div class="field">
+              <label for="deRiskPercent">縮小為原風險 <span>10% 至 100%</span></label>
+              <div class="input-wrap"><input id="deRiskPercent" type="number" inputmode="decimal" min="10" max="100" step="5" value="50"><span class="suffix">%</span></div>
+            </div>
+          </div>
+          <div class="risk-plan-grid" id="riskPlanSummary" aria-live="polite"></div>
+          <p class="risk-plan-note">模型沒有每筆交易的日期、時間與持倉重疊資料，所以這些是風控計畫與超標提示，不是已模擬執行的交易規則。</p>
+        </div>
+      </details>
+      <details id="presetDetails">
+        <summary>儲存與載入策略</summary>
+        <div class="disclosure-content">
+          <div class="preset-toolbar">
+            <div class="field">
+              <label for="presetName">策略名稱 <span>最多 40 字</span></label>
+              <input id="presetName" type="text" maxlength="40" placeholder="例如：NQ 保守版">
+            </div>
+            <button class="btn btn-primary" id="savePresetBtn" type="button">儲存目前設定</button>
+          </div>
+          <p class="preset-status" id="presetStatus" role="status" aria-live="polite">資料只保存在目前瀏覽器，不會上傳。</p>
+          <div class="preset-list" id="presetList"></div>
+        </div>
+      </details>
+      <details>
+        <summary>模型口徑、限制與資料來源</summary>
+        <div class="disclosure-content method-copy">
+          <ul>
+            <li>開啟複利時，每筆 1R 等於進場前淨值乘以單筆風險。關閉時，每筆 1R 固定以初始本金計算；帳戶歸零後停止交易。</li>
+            <li>每個策略會依自己的勝率，產生勝負盡量均勻分布的代表路徑。固定勝敗數時，月底資金不受順序影響；最大回撤會隨排列改變。</li>
+            <li>「固定勝敗模擬」使用四捨五入後的勝敗數；「機率期望月底」把每筆視為獨立 Bernoulli 試驗，因此兩者可能不同。</li>
+            <li>壓力測試會為每個策略模擬 10,000 個月。「較差 10%」是月底資金的第 10 百分位；「90% 模擬的最大回撤」是最大回撤的第 90 百分位。「最差模擬回撤」則是這 10,000 次中觀察到的最大值，不是理論極限。</li>
+            <li>模擬次數只影響估計的穩定度。交易筆數增加時，「期間內曾達到某個回撤」的累積機率通常會提高。</li>
+            <li>模擬使用固定種子。同一組輸入會得到相同結果，方便前後比較。</li>
+            <li>勝率估計範圍使用 Wilson 95% 二項比例區間。它只描述歷史樣本造成的統計不確定性，不包含市場狀態改變、交易相關性或策略失效。</li>
+            <li>保守勝率情境會以 Wilson 95% 區間下限另外執行壓力測試，與基準情境並列，不會覆寫主結果。</li>
+            <li>風險反推維持使用者輸入的固定勝率，使用相同的 10,000 條隨機路徑與二分搜尋，找出指定回撤分位數下的單筆風險上限；搜尋範圍最高為 10%。</li>
+            <li>模型未納入手續費、滑價、跳空、停損未成交、部分出場、交易相關性與策略容量。</li>
+            <li>風險與盈虧比是簡化假設。實際評估應使用扣除成本後的勝率、平均獲利 R 與平均虧損 R。</li>
+          </ul>
+          <div class="source-list">
+            <a href="https://www.cmegroup.com/education/courses/trade-and-risk-management/the-2-percent-rule" target="_blank" rel="noreferrer">CME Group：The 2% Rule</a>
+            <a href="https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm" target="_blank" rel="noreferrer">NIST：二項比例信賴區間</a>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <footer>此模型用於風險教育，不構成投資建議。請用扣除交易成本後的實際紀錄更新勝率與盈虧比分布。</footer>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+      const $ = (id) => document.getElementById(id);
+      const defaults = {
+        capital: 10000,
+        trades: 20,
+        compound: true,
+        conservative: false,
+        targetDrawdown: 15,
+        reverseCoverage: 90,
+        riskPlan: { dailyLossLimit: 3, maxTradesPerDay: 3, stopAfterLosses: 3, maxConcurrentRisk: 2, deRiskDrawdown: 10, deRiskPercent: 50 },
+        strategies: [{ winRate: 50, risk: 1, rr: 2, sampleSize: 0 }, { winRate: 50, risk: 2, rr: 3, sampleSize: 0 }]
+      };
+      const state = { results: [], stress: [], conservativeStress: [], reverse: [], reverseDirty: true, mode: "comparison", hoverIndex: null, chartGeometry: null };
+      const storageKeys = { working: "trade-risk-model-working-v1", presets: "trade-risk-model-presets-v1" };
+      let initializing = true;
+      const fieldRules = {
+        capital: { min: 100, max: 1e9, fallback: 10000 },
+        tradeCount: { min: 1, max: 500, fallback: 20, integer: true },
+        winRateOne: { min: 0, max: 100, fallback: 50 },
+        winRateTwo: { min: 0, max: 100, fallback: 50 },
+        riskOne: { min: 0, max: 10, fallback: 1 },
+        riskTwo: { min: 0, max: 10, fallback: 2 },
+        rrOne: { min: .5, max: 10, fallback: 2 },
+        rrTwo: { min: .5, max: 10, fallback: 3 },
+        sampleSizeOne: { min: 0, max: 100000, fallback: 0, integer: true },
+        sampleSizeTwo: { min: 0, max: 100000, fallback: 0, integer: true },
+        targetDrawdown: { min: 1, max: 80, fallback: 15 },
+        dailyLossLimit: { min: 0, max: 100, fallback: 3 },
+        maxTradesPerDay: { min: 0, max: 50, fallback: 3, integer: true },
+        stopAfterLosses: { min: 0, max: 20, fallback: 3, integer: true },
+        maxConcurrentRisk: { min: 0, max: 100, fallback: 2 },
+        deRiskDrawdown: { min: 0, max: 100, fallback: 10 },
+        deRiskPercent: { min: 10, max: 100, fallback: 50 }
+      };
+      const numericIds = Object.keys(fieldRules);
+      const riskPlanIds = ["dailyLossLimit", "maxTradesPerDay", "stopAfterLosses", "maxConcurrentRisk", "deRiskDrawdown", "deRiskPercent"];
+      const lastValidValues = {};
+
+      const fmtMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmtPct = (v, signed = false) => `${signed && v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v * 100).toFixed(2)}%`;
+      const fmtSimProbability = v => v <= 0 ? "<0.01%" : v >= 1 ? ">99.99%" : `${(v * 100).toFixed(2)}%`;
+      const clamp = (v, min, max) => Math.min(max, Math.max(min, Number.isFinite(v) ? v : min));
+      const val = (id, fallback) => { const raw = $(id).value.trim(); const n = Number(raw); return raw !== "" && Number.isFinite(n) ? n : (lastValidValues[id] ?? fallback); };
+
+      function getInputs() {
+        return {
+          capital: clamp(val("capital", defaults.capital), 100, 1e9),
+          trades: Math.round(clamp(val("tradeCount", defaults.trades), 1, 500)),
+          compound: $("compoundSizing").checked,
+          strategies: [
+            { name: "策略 1", winRate: clamp(val("winRateOne", 50), 0, 100) / 100, risk: clamp(val("riskOne", 1), 0, 10) / 100, rr: clamp(val("rrOne", 2), .5, 10), sampleSize: Math.round(clamp(val("sampleSizeOne", 0), 0, 100000)) },
+            { name: "策略 2", winRate: clamp(val("winRateTwo", 50), 0, 100) / 100, risk: clamp(val("riskTwo", 2), 0, 10) / 100, rr: clamp(val("rrTwo", 3), .5, 10), sampleSize: Math.round(clamp(val("sampleSizeTwo", 0), 0, 100000)) }
+          ]
+        };
+      }
+
+      function getReverseSettings() {
+        const coverage = Number($("reverseCoverage").value);
+        return {
+          targetDrawdown: clamp(val("targetDrawdown", defaults.targetDrawdown), 1, 80) / 100,
+          coverage: [80, 90, 95].includes(coverage) ? coverage / 100 : defaults.reverseCoverage / 100
+        };
+      }
+
+      function distributedOutcomes(n, wins) {
+        const arr = Array(n).fill("L");
+        if (wins <= 0) return arr;
+        if (wins >= n) return Array(n).fill("W");
+        for (let k = 0; k < wins; k++) arr[Math.min(n - 1, Math.floor((k + .5) * n / wins))] = "W";
+        return arr;
+      }
+
+      function nextEquity(equity, capital, risk, rr, won, compound) {
+        if (equity <= 0) return 0;
+        const oneR = (compound ? equity : capital) * risk;
+        return Math.max(0, equity + (won ? oneR * rr : -oneR));
+      }
+
+      function simulate(capital, outcomes, risk, rr, compound) {
+        let equity = capital, peak = capital, maxDD = 0;
+        const path = [capital];
+        const rows = [];
+        outcomes.forEach((result, i) => {
+          const before = equity;
+          const executed = before > 0;
+          const oneR = executed ? (compound ? before : capital) * risk : 0;
+          equity = nextEquity(before, capital, risk, rr, result === "W", compound);
+          peak = Math.max(peak, equity);
+          const dd = 1 - equity / peak;
+          maxDD = Math.max(maxDD, dd);
+          path.push(equity);
+          rows.push({ trade: i + 1, result: executed ? result : "停止", before, oneR, after: equity, drawdown: dd });
+        });
+        return { equity, totalReturn: equity / capital - 1, maxDD, path, rows };
+      }
+
+      function wilsonInterval(proportion, sampleSize, z = 1.959963984540054) {
+        if (sampleSize <= 0) return null;
+        const zSquared = z * z;
+        const denominator = 1 + zSquared / sampleSize;
+        const center = (proportion + zSquared / (2 * sampleSize)) / denominator;
+        const margin = z * Math.sqrt((proportion * (1 - proportion) + zSquared / (4 * sampleSize)) / sampleSize) / denominator;
+        return { low: clamp(center - margin, 0, 1), high: clamp(center + margin, 0, 1) };
+      }
+
+      function buildScenarios(inputs) {
+        return inputs.strategies.map(({ name, winRate, risk, rr, sampleSize }) => {
+          const wins = Math.round(inputs.trades * winRate);
+          const losses = inputs.trades - wins;
+          const outcomes = distributedOutcomes(inputs.trades, wins);
+          const sim = simulate(inputs.capital, outcomes, risk, rr, inputs.compound);
+          const edge = winRate * rr - (1 - winRate);
+          const breakEven = 1 / (rr + 1);
+          const winRateInterval = wilsonInterval(winRate, sampleSize);
+          const lowerEdge = winRateInterval ? winRateInterval.low * rr - (1 - winRateInterval.low) : null;
+          const expectedEquity = inputs.compound
+            ? inputs.capital * Math.pow(1 + risk * edge, inputs.trades)
+            : Math.max(0, inputs.capital * (1 + risk * edge * inputs.trades));
+          const lossRunDD = inputs.compound ? 1 - Math.pow(1 - risk, losses) : Math.min(1, risk * losses);
+          const highRisk = risk > .02 || sim.maxDD >= .10;
+          return { name, winRate, risk, rr, sampleSize, winRateInterval, lowerEdge, wins, losses, outcomes, expectedEquity, lossRunDD, edge, breakEven, highRisk, ...sim };
+        });
+      }
+
+      function seedFrom(parts) {
+        let hash = 2166136261;
+        String(parts.join("|")).split("").forEach(char => { hash ^= char.charCodeAt(0); hash = Math.imul(hash, 16777619); });
+        return hash >>> 0;
+      }
+
+      function seededRandom(seed) {
+        return () => {
+          seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+          let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+          t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+      }
+
+      function percentile(sorted, q) {
+        return sorted[Math.min(sorted.length - 1, Math.max(0, Math.floor((sorted.length - 1) * q)))];
+      }
+
+      function monteCarlo(inputs, strategy, index, runs = 10000) {
+        const random = seededRandom(seedFrom([inputs.capital, inputs.trades, strategy.winRate, strategy.risk, strategy.rr, inputs.compound, index]));
+        const endings = [], drawdowns = [], streaks = [];
+        let losingMonths = 0, over10 = 0, over20 = 0;
+        for (let run = 0; run < runs; run++) {
+          let equity = inputs.capital, peak = equity, maxDD = 0, lossStreak = 0, longestLoss = 0;
+          for (let trade = 0; trade < inputs.trades; trade++) {
+            if (random() < strategy.winRate) {
+              equity = nextEquity(equity, inputs.capital, strategy.risk, strategy.rr, true, inputs.compound);
+              lossStreak = 0;
+            } else {
+              equity = nextEquity(equity, inputs.capital, strategy.risk, strategy.rr, false, inputs.compound);
+              lossStreak += 1;
+              longestLoss = Math.max(longestLoss, lossStreak);
+            }
+            peak = Math.max(peak, equity);
+            maxDD = Math.max(maxDD, 1 - equity / peak);
+          }
+          endings.push(equity); drawdowns.push(maxDD); streaks.push(longestLoss);
+          if (equity < inputs.capital) losingMonths += 1;
+          if (maxDD >= .10) over10 += 1;
+          if (maxDD >= .20) over20 += 1;
+        }
+        endings.sort((a,b) => a-b); drawdowns.sort((a,b) => a-b); streaks.sort((a,b) => a-b);
+        return {
+          runs,
+          medianEnding: percentile(endings, .5),
+          p10Ending: percentile(endings, .1),
+          losingMonthProb: losingMonths / runs,
+          p90Drawdown: percentile(drawdowns, .9),
+          worstDrawdown: drawdowns.at(-1),
+          probDD10: over10 / runs,
+          probDD20: over20 / runs,
+          medianLossStreak: percentile(streaks, .5),
+          p90LossStreak: percentile(streaks, .9)
+        };
+      }
+
+      function buildReverseOutcomes(inputs, strategy, index, runs) {
+        const random = seededRandom(seedFrom(["reverse-v2", inputs.trades, strategy.winRate, strategy.rr, inputs.compound, index]));
+        const outcomes = new Uint8Array(runs * inputs.trades);
+        for (let i = 0; i < outcomes.length; i++) outcomes[i] = random() < strategy.winRate ? 1 : 0;
+        return outcomes;
+      }
+
+      function reverseDrawdownQuantile(outcomes, trades, runs, risk, rr, coverage, compound) {
+        const drawdowns = new Float64Array(runs);
+        for (let run = 0; run < runs; run++) {
+          let equity = 1, peak = 1, maxDD = 0;
+          const offset = run * trades;
+          for (let trade = 0; trade < trades; trade++) {
+            equity = nextEquity(equity, 1, risk, rr, Boolean(outcomes[offset + trade]), compound);
+            peak = Math.max(peak, equity);
+            maxDD = Math.max(maxDD, 1 - equity / peak);
+          }
+          drawdowns[run] = maxDD;
+        }
+        drawdowns.sort();
+        return percentile(drawdowns, coverage);
+      }
+
+      function reverseRiskSummary(outcomes, inputs, strategy, risk, coverage, runs) {
+        const endings = new Float64Array(runs), drawdowns = new Float64Array(runs);
+        let losingMonths = 0;
+        for (let run = 0; run < runs; run++) {
+          let equity = inputs.capital, peak = equity, maxDD = 0;
+          const offset = run * inputs.trades;
+          for (let trade = 0; trade < inputs.trades; trade++) {
+            equity = nextEquity(equity, inputs.capital, risk, strategy.rr, Boolean(outcomes[offset + trade]), inputs.compound);
+            peak = Math.max(peak, equity);
+            maxDD = Math.max(maxDD, 1 - equity / peak);
+          }
+          endings[run] = equity;
+          drawdowns[run] = maxDD;
+          if (equity < inputs.capital) losingMonths += 1;
+        }
+        endings.sort(); drawdowns.sort();
+        return {
+          risk,
+          coverageDrawdown: percentile(drawdowns, coverage),
+          medianEnding: percentile(endings, .5),
+          p10Ending: percentile(endings, .1),
+          losingMonthProb: losingMonths / runs
+        };
+      }
+
+      function reverseRiskLimit(inputs, strategy, index, targetDrawdown, coverage, runs = 10000) {
+        const outcomes = buildReverseOutcomes(inputs, strategy, index, runs);
+        let low = 0, high = .10;
+        const highDrawdown = reverseDrawdownQuantile(outcomes, inputs.trades, runs, high, strategy.rr, coverage, inputs.compound);
+        const capped = highDrawdown <= targetDrawdown;
+        if (capped) low = high;
+        else {
+          for (let iteration = 0; iteration < 12; iteration++) {
+            const middle = (low + high) / 2;
+            const drawdown = reverseDrawdownQuantile(outcomes, inputs.trades, runs, middle, strategy.rr, coverage, inputs.compound);
+            if (drawdown <= targetDrawdown) low = middle;
+            else high = middle;
+          }
+        }
+        return { ...reverseRiskSummary(outcomes, inputs, strategy, low, coverage, runs), runs, capped };
+      }
+
+      function renderReverseResults(inputs, settings) {
+        const sizingLabel = inputs.compound ? "逐筆複利" : "固定 1R";
+        $("reverseResults").innerHTML = state.reverse.map((result, index) => {
+          const strategy = inputs.strategies[index];
+          const currentRisk = strategy.risk;
+          const difference = currentRisk - result.risk;
+          const withinLimit = difference <= .00005;
+          const riskLabel = result.capped ? "≥10.00%" : `${(result.risk * 100).toFixed(2)}%`;
+          return `<article class="reverse-card" aria-label="${strategy.name}風險反推結果">
+            <div class="reverse-card-head"><strong>${strategy.name}</strong><span>${sizingLabel} · 勝率 ${(strategy.winRate * 100).toFixed(1)}% · 1:${strategy.rr}</span></div>
+            <span class="reverse-risk-label">建議單筆風險上限</span>
+            <span class="reverse-risk-value ${result.risk > .02 ? "risk-alert" : ""}">${riskLabel}</span>
+            <div class="reverse-metrics">
+              <div class="reverse-metric"><small>${Math.round(settings.coverage * 100)}% 模擬最大回撤</small><strong>${fmtPct(-result.coverageDrawdown)}</strong></div>
+              <div class="reverse-metric"><small>第一筆風險金額</small><strong>${fmtMoney.format(inputs.capital * result.risk)}</strong></div>
+              <div class="reverse-metric"><small>月底資金中位數</small><strong>${fmtMoney.format(result.medianEnding)}</strong></div>
+              <div class="reverse-metric"><small>較差 10% 月底資金</small><strong>${fmtMoney.format(result.p10Ending)}</strong></div>
+            </div>
+            <p class="reverse-note ${withinLimit ? "edge-positive" : "edge-negative"}">${withinLimit ? `目前風險 ${(currentRisk * 100).toFixed(2)}% 在建議上限內` : `目前風險 ${(currentRisk * 100).toFixed(2)}%，高出建議上限 ${(difference * 100).toFixed(2)}%`}${result.capped ? "；模型搜尋上限為 10%" : ""}</p>
+          </article>`;
+        }).join("");
+      }
+
+      function markReverseDirty() {
+        state.reverseDirty = true;
+        if (state.reverse.length) $("reverseStatus").textContent = "設定已變更，請重新計算建議風險。";
+      }
+
+      function calculateReverseRisk() {
+        const button = $("calculateRiskBtn");
+        button.disabled = true;
+        button.textContent = "計算中…";
+        $("reverseStatus").textContent = "正在執行固定勝率的 10,000 次模擬…";
+        setTimeout(() => {
+          const inputs = getInputs(), settings = getReverseSettings();
+          state.reverse = inputs.strategies.map((strategy, index) => reverseRiskLimit(inputs, strategy, index, settings.targetDrawdown, settings.coverage));
+          state.reverseDirty = false;
+          renderReverseResults(inputs, settings);
+          $("reverseStatus").textContent = `完成：目標回撤 ${fmtPct(-settings.targetDrawdown)}，要求 ${Math.round(settings.coverage * 100)}% 模擬月份不超標。這是模型估計，不是保證。`;
+          button.disabled = false;
+          button.textContent = "重新計算";
+          persistWorkingState();
+        }, 30);
+      }
+
+      function renderScenarioTabs() {
+        const host = $("scenarioTabs");
+        const inputs = getInputs();
+        const sizingLabel = inputs.compound ? "逐筆複利" : "固定金額";
+        host.innerHTML = state.results.map((s, i) => `
+          <article class="scenario-tab" aria-label="${s.name}計算結果">
+            <span class="strategy-result-head"><strong>${s.name}</strong><span>勝率 ${(s.winRate*100).toFixed(1)}% · 風險 ${(s.risk*100).toFixed(1)}% · 1:${s.rr}</span></span>
+            <span class="strategy-result-label">${sizingLabel}的固定勝敗模擬</span>
+            <span class="strategy-result-value">${fmtMoney.format(s.equity)}</span>
+            <span class="strategy-result-metrics"><span>${s.wins} 勝 ${s.losses} 敗</span><span>報酬 ${fmtPct(s.totalReturn, true)}</span><span class="${s.highRisk ? "risk-alert" : ""}">最大回撤 ${fmtPct(-s.maxDD)}${s.highRisk ? " · 高風險" : ""}</span></span>
+            <span class="strategy-edge ${s.edge >= 0 ? "edge-positive" : "edge-negative"}">損益兩平勝率 ${(s.breakEven*100).toFixed(1)}% · 勝率差 ${s.winRate-s.breakEven >= 0 ? "+" : "−"}${Math.abs((s.winRate-s.breakEven)*100).toFixed(1)}%</span>
+            <span class="strategy-result-foot">機率期望月底 ${fmtMoney.format(s.expectedEquity)} · 每筆期望 ${s.edge >= 0 ? "+" : ""}${s.edge.toFixed(2)}R · ${inputs.compound ? "下一筆" : "固定"} 1R ${fmtMoney.format((inputs.compound ? s.equity : inputs.capital) * s.risk)}</span>
+          </article>`).join("");
+      }
+
+      function renderConfidence() {
+        ["confidenceOne", "confidenceTwo"].forEach((id, index) => {
+          const output = $(id), scenario = state.results[index];
+          if (!scenario.sampleSize || !scenario.winRateInterval) {
+            output.innerHTML = "輸入樣本數後顯示";
+            return;
+          }
+          const estimatedWins = scenario.winRate * scenario.sampleSize;
+          const winsLabel = Number.isInteger(estimatedWins) ? estimatedWins.toLocaleString("en-US") : estimatedWins.toLocaleString("en-US", { maximumFractionDigits: 1 });
+          const lowerClass = scenario.lowerEdge >= 0 ? "edge-positive" : "edge-negative";
+          output.innerHTML = `<strong>95% 估計 ${fmtPct(scenario.winRateInterval.low)}–${fmtPct(scenario.winRateInterval.high)}</strong><span>約 ${winsLabel} 勝／${scenario.sampleSize.toLocaleString("en-US")} 筆 · <span class="${lowerClass}">下限期望 ${scenario.lowerEdge >= 0 ? "+" : "−"}${Math.abs(scenario.lowerEdge).toFixed(2)}R</span></span>`;
+        });
+      }
+
+      function renderStress() {
+        $("stressGrid").innerHTML = state.stress.map((m, i) => {
+          const s = state.results[i];
+          const conservative = state.conservativeStress[i];
+          const drawdownAlert = m.p90Drawdown >= .10 || s.risk > .02;
+          const conservativeBlock = $("conservativeScenario").checked
+            ? conservative
+              ? `<div class="conservative-stress"><strong>保守勝率情境 · 95% 下限 ${fmtPct(s.winRateInterval.low)}</strong><span>較差 10% 月底 ${fmtMoney.format(conservative.p10Ending)} · 虧損月份 ${fmtSimProbability(conservative.losingMonthProb)} · 90% 模擬最大回撤 ${fmtPct(-conservative.p90Drawdown)}</span></div>`
+              : `<div class="conservative-stress"><strong>保守勝率情境</strong><span>先在「勝率估計範圍」輸入 ${s.name} 的歷史樣本數。</span></div>`
+            : "";
+          return `<article class="stress-card" aria-label="${s.name}蒙地卡羅壓力測試">
+            <div class="stress-card-head"><strong>${s.name}</strong><span>${m.runs.toLocaleString("en-US")} 次</span></div>
+            <div class="stress-metrics">
+              <div class="stress-metric"><small>月底資金中位數</small><strong>${fmtMoney.format(m.medianEnding)}</strong></div>
+              <div class="stress-metric"><small>較差 10% 月底資金</small><strong>${fmtMoney.format(m.p10Ending)}</strong></div>
+              <div class="stress-metric"><small>虧損月份機率</small><strong class="${m.losingMonthProb >= .5 ? "risk-alert" : ""}">${fmtSimProbability(m.losingMonthProb)}</strong></div>
+              <div class="stress-metric"><small>90% 模擬的最大回撤</small><strong class="${drawdownAlert ? "risk-alert" : ""}">${fmtPct(-m.p90Drawdown)}${drawdownAlert ? " 高風險" : ""}</strong><span class="metric-note ${m.worstDrawdown >= .10 ? "risk-alert" : ""}">最差模擬回撤 ${fmtPct(-m.worstDrawdown)}</span></div>
+              <div class="stress-metric"><small>回撤達 10%／20%</small><strong class="${m.probDD10 > 0 ? "risk-alert" : ""}">${fmtSimProbability(m.probDD10)}／${fmtSimProbability(m.probDD20)}</strong></div>
+              <div class="stress-metric"><small>最長連敗中位／90%</small><strong>${m.medianLossStreak}／${m.p90LossStreak} 筆</strong></div>
+              ${conservativeBlock}
+            </div>
+          </article>`;
+        }).join("");
+      }
+
+      function getRiskPlan() {
+        return {
+          dailyLossLimit: clamp(val("dailyLossLimit", 3), 0, 100) / 100,
+          maxTradesPerDay: Math.round(clamp(val("maxTradesPerDay", 3), 0, 50)),
+          stopAfterLosses: Math.round(clamp(val("stopAfterLosses", 3), 0, 20)),
+          maxConcurrentRisk: clamp(val("maxConcurrentRisk", 2), 0, 100) / 100,
+          deRiskDrawdown: clamp(val("deRiskDrawdown", 10), 0, 100) / 100,
+          deRiskPercent: clamp(val("deRiskPercent", 50), 10, 100) / 100
+        };
+      }
+
+      function renderRiskPlan() {
+        const inputs = getInputs(), plan = getRiskPlan();
+        $("riskPlanSummary").innerHTML = inputs.strategies.map(strategy => {
+          const dailyLosses = plan.dailyLossLimit > 0 && strategy.risk > 0 ? Math.floor(plan.dailyLossLimit / strategy.risk + 1e-9) : null;
+          const concurrentPositions = plan.maxConcurrentRisk > 0 && strategy.risk > 0 ? Math.floor(plan.maxConcurrentRisk / strategy.risk + 1e-9) : null;
+          const dailyAlert = plan.dailyLossLimit > 0 && strategy.risk > plan.dailyLossLimit;
+          const concurrentAlert = plan.maxConcurrentRisk > 0 && strategy.risk > plan.maxConcurrentRisk;
+          const reducedRisk = strategy.risk * plan.deRiskPercent;
+          return `<article class="risk-plan-card" aria-label="${strategy.name}風控計畫">
+            <strong>${strategy.name}</strong>
+            <ul class="risk-plan-list">
+              <li><span>每日最大虧損</span><b class="${dailyAlert ? "risk-alert" : ""}">${plan.dailyLossLimit ? `${fmtPct(-plan.dailyLossLimit)} · 約 ${Math.max(0, dailyLosses)} 次完整停損` : "未啟用"}</b></li>
+              <li><span>每日最多交易</span><b>${plan.maxTradesPerDay ? `${plan.maxTradesPerDay} 筆` : "未啟用"}</b></li>
+              <li><span>連敗後停手</span><b>${plan.stopAfterLosses ? `${plan.stopAfterLosses} 筆` : "未啟用"}</b></li>
+              <li><span>同時持倉上限</span><b class="${concurrentAlert ? "risk-alert" : ""}">${plan.maxConcurrentRisk ? `${fmtPct(plan.maxConcurrentRisk)} · 最多 ${Math.max(0, concurrentPositions)} 個完整部位` : "未啟用"}</b></li>
+              <li><span>回撤縮小風險</span><b>${plan.deRiskDrawdown ? `${fmtPct(-plan.deRiskDrawdown)} 後改為 ${fmtPct(reducedRisk)}` : "未啟用"}</b></li>
+            </ul>
+          </article>`;
+        }).join("");
+      }
+
+      function renderSizingState() {
+        const compound = $("compoundSizing").checked;
+        $("compoundStatus").textContent = compound ? "逐筆複利：已開啟" : "逐筆複利：已關閉";
+        $("compoundHint").textContent = compound ? "每筆 1R 依當下帳戶淨值重新計算" : "每筆 1R 固定以初始本金計算";
+        $("sizingBrand").textContent = compound ? "逐單複利" : "固定金額";
+      }
+
+      function setMode(mode, persist = true) {
+        state.mode = mode === "reverse" ? "reverse" : "comparison";
+        const comparison = state.mode === "comparison";
+        $("comparisonMode").hidden = !comparison;
+        $("reverseMode").hidden = comparison;
+        $("roundingNote").hidden = !comparison;
+        $("stressDetails").hidden = !comparison;
+        $("csvBtn").hidden = !comparison;
+        $("comparisonModeBtn").setAttribute("aria-pressed", String(comparison));
+        $("reverseModeBtn").setAttribute("aria-pressed", String(!comparison));
+        const compound = $("compoundSizing").checked;
+        $("page-title").textContent = comparison ? (compound ? "月度複利與回撤" : "固定金額與回撤") : "由回撤反推單筆風險";
+        $("pageIntro").textContent = comparison
+          ? `共用相同本金與交易筆數，目前使用${compound ? "逐筆複利" : "固定 1R"} 比較兩個策略。`
+          : `設定可接受的最大回撤，以${compound ? "逐筆複利" : "固定 1R"} 模型反推單筆風險上限。`;
+        if (comparison && state.results.length) setTimeout(() => drawChart(state.results), 0);
+        if (persist) persistWorkingState();
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
+      }
+
+      function readStoredJson(key, fallback) {
+        try {
+          if (typeof localStorage === "undefined") return fallback;
+          const raw = localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : fallback;
+        } catch (_) {
+          return fallback;
+        }
+      }
+
+      function writeStoredJson(key, value) {
+        try {
+          if (typeof localStorage === "undefined") return false;
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function captureSettings() {
+        const values = {};
+        numericIds.forEach(id => {
+          const raw = $(id).value.trim(), number = Number(raw), rule = fieldRules[id];
+          values[id] = raw !== "" && Number.isFinite(number) ? number : (lastValidValues[id] ?? rule.fallback);
+        });
+        return {
+          version: 2,
+          mode: state.mode,
+          values,
+          syncWinRate: $("syncWinRate").checked,
+          compoundSizing: $("compoundSizing").checked,
+          conservativeScenario: $("conservativeScenario").checked,
+          reverseCoverage: Number($("reverseCoverage").value)
+        };
+      }
+
+      function persistWorkingState() {
+        if (!initializing) writeStoredJson(storageKeys.working, captureSettings());
+      }
+
+      function applySettings(settings) {
+        if (!settings || ![1, 2].includes(settings.version) || !settings.values) return false;
+        numericIds.forEach(id => {
+          const rule = fieldRules[id], candidate = Number(settings.values[id]);
+          let next = Number.isFinite(candidate) ? clamp(candidate, rule.min, rule.max) : rule.fallback;
+          if (rule.integer) next = Math.round(next);
+          $(id).value = next;
+          lastValidValues[id] = next;
+        });
+        $("syncWinRate").checked = Boolean(settings.syncWinRate);
+        $("compoundSizing").checked = settings.version === 1 ? true : settings.compoundSizing !== false;
+        $("conservativeScenario").checked = settings.version === 2 && Boolean(settings.conservativeScenario);
+        $("reverseCoverage").value = [80, 90, 95].includes(Number(settings.reverseCoverage)) ? String(settings.reverseCoverage) : String(defaults.reverseCoverage);
+        updateSyncState();
+        renderSizingState();
+        update();
+        setMode(settings.mode, false);
+        markReverseDirty();
+        return true;
+      }
+
+      function getPresets() {
+        const presets = readStoredJson(storageKeys.presets, []);
+        return Array.isArray(presets) ? presets.filter(item => item && item.id && item.name && item.settings) : [];
+      }
+
+      function renderPresets() {
+        const presets = getPresets();
+        if (!presets.length) {
+          $("presetList").innerHTML = `<div class="preset-empty">尚未儲存策略</div>`;
+          return;
+        }
+        $("presetList").innerHTML = presets.map(preset => {
+          const values = preset.settings.values || {};
+          const summary = `策略 1：${Number(values.winRateOne || 0).toFixed(1)}%／1:${Number(values.rrOne || 0)} · 策略 2：${Number(values.winRateTwo || 0).toFixed(1)}%／1:${Number(values.rrTwo || 0)}`;
+          return `<article class="preset-item">
+            <div class="preset-copy"><strong title="${escapeHtml(preset.name)}">${escapeHtml(preset.name)}</strong><span>${escapeHtml(summary)}</span></div>
+            <div class="preset-actions"><button class="btn" type="button" data-preset-action="load" data-preset-id="${escapeHtml(preset.id)}">套用</button><button class="btn btn-danger" type="button" data-preset-action="delete" data-preset-id="${escapeHtml(preset.id)}">刪除</button></div>
+          </article>`;
+        }).join("");
+      }
+
+      function savePreset() {
+        const name = $("presetName").value.trim();
+        if (!name) {
+          $("presetStatus").textContent = "請先輸入策略名稱。";
+          $("presetName").focus();
+          return;
+        }
+        const presets = getPresets();
+        const existing = presets.find(item => item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+        if (existing) existing.settings = captureSettings();
+        else presets.unshift({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name, settings: captureSettings() });
+        if (!writeStoredJson(storageKeys.presets, presets)) {
+          $("presetStatus").textContent = "目前瀏覽器無法儲存資料。你仍可繼續使用模型。";
+          return;
+        }
+        $("presetStatus").textContent = existing ? `已更新「${name}」。` : `已儲存「${name}」。`;
+        $("presetName").value = "";
+        renderPresets();
+      }
+
+      function handlePresetAction(event) {
+        const action = event.target?.dataset?.presetAction;
+        const id = event.target?.dataset?.presetId;
+        if (!action || !id) return;
+        const presets = getPresets();
+        const preset = presets.find(item => item.id === id);
+        if (!preset) return;
+        if (action === "load") {
+          applySettings(preset.settings);
+          $("presetStatus").textContent = `已套用「${preset.name}」。`;
+          persistWorkingState();
+          return;
+        }
+        if (action === "delete" && window.confirm(`確定刪除「${preset.name}」？`)) {
+          writeStoredJson(storageKeys.presets, presets.filter(item => item.id !== id));
+          $("presetStatus").textContent = `已刪除「${preset.name}」。`;
+          renderPresets();
+        }
+      }
+
+      function drawChart(scenarios) {
+        const canvas = $("equityChart");
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.max(1, Math.round(rect.width * dpr));
+        canvas.height = Math.max(1, Math.round(rect.height * dpr));
+        const ctx = canvas.getContext("2d");
+        ctx.scale(dpr, dpr);
+        const w = rect.width, h = rect.height;
+        const pad = { l: w < 520 ? 52 : 70, r: 18, t: 24, b: 38 };
+        const values = scenarios.flatMap(s => s.path);
+        let min = Math.min(...values), max = Math.max(...values);
+        const range = Math.max(max - min, max * .02);
+        min -= range * .18; max += range * .18;
+        const y = v => pad.t + (max - v) / (max - min) * (h - pad.t - pad.b);
+        const pathLength = scenarios[0].path.length;
+        const pathX = i => pad.l + i / Math.max(1, pathLength - 1) * (w - pad.l - pad.r);
+        state.chartGeometry = { pad, width: w, pathLength };
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.font = "11px ui-monospace, SFMono-Regular, Menlo, monospace";
+        ctx.textAlign = "right"; ctx.textBaseline = "middle";
+        for (let i = 0; i <= 4; i++) {
+          const v = min + (max - min) * i / 4;
+          const yy = y(v);
+          ctx.strokeStyle = "#d9e2ec"; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+          ctx.beginPath(); ctx.moveTo(pad.l, yy); ctx.lineTo(w-pad.r, yy); ctx.stroke();
+          ctx.setLineDash([]); ctx.fillStyle = "#5b7083";
+          ctx.fillText(`$${Math.round(v).toLocaleString("en-US")}`, pad.l - 9, yy);
+        }
+        ctx.textAlign = "center"; ctx.textBaseline = "top";
+        const ticks = Math.min(5, pathLength - 1);
+        for (let i = 0; i <= ticks; i++) {
+          const idx = Math.round((pathLength - 1) * i / ticks);
+          const xx = pad.l + idx / Math.max(1, pathLength - 1) * (w - pad.l - pad.r);
+          ctx.fillStyle = "#5b7083"; ctx.fillText(String(idx), xx, h - pad.b + 12);
+        }
+
+        const styles = [{ color: "#2266d6", dash: [] }, { color: "#c56b1a", dash: [9, 6] }];
+        scenarios.forEach((scenario, seriesIndex) => {
+          const path = scenario.path;
+          ctx.beginPath(); path.forEach((v,i) => i ? ctx.lineTo(pathX(i),y(v)) : ctx.moveTo(pathX(i),y(v)));
+          ctx.strokeStyle = styles[seriesIndex].color; ctx.lineWidth = 3; ctx.setLineDash(styles[seriesIndex].dash); ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.beginPath(); ctx.arc(pathX(path.length-1), y(path.at(-1)), 4.5, 0, Math.PI*2); ctx.fillStyle = styles[seriesIndex].color; ctx.fill(); ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+        });
+
+        if (Number.isInteger(state.hoverIndex)) {
+          const index = clamp(state.hoverIndex, 0, pathLength - 1);
+          const xx = pathX(index);
+          ctx.setLineDash([3, 4]); ctx.strokeStyle = "#526d82"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(xx, pad.t); ctx.lineTo(xx, h-pad.b); ctx.stroke(); ctx.setLineDash([]);
+          scenarios.forEach((scenario, seriesIndex) => {
+            ctx.beginPath(); ctx.arc(xx, y(scenario.path[index]), 4.5, 0, Math.PI*2); ctx.fillStyle = "white"; ctx.fill(); ctx.strokeStyle = styles[seriesIndex].color; ctx.lineWidth = 2.5; ctx.stroke();
+          });
+        }
+      }
+
+      function showChartPoint(index) {
+        const geometry = state.chartGeometry;
+        if (!geometry || !state.results.length) return;
+        const nextIndex = Math.round(clamp(index, 0, geometry.pathLength - 1));
+        if (state.hoverIndex === nextIndex && !$("chartTooltip").hidden) return;
+        state.hoverIndex = nextIndex;
+        drawChart(state.results);
+        const tooltip = $("chartTooltip");
+        const [one, two] = state.results;
+        const trade = state.hoverIndex;
+        const oneRow = trade === 0 ? null : one.rows[trade - 1];
+        const twoRow = trade === 0 ? null : two.rows[trade - 1];
+        tooltip.innerHTML = `<strong>${trade === 0 ? "起始資金" : `第 ${trade} 筆交易`}</strong>
+          <span>策略 1${oneRow ? ` ${oneRow.result}` : ""} · ${fmtMoney.format(one.path[trade])} · 回撤 ${fmtPct(-(oneRow?.drawdown || 0))}</span>
+          <span>策略 2${twoRow ? ` ${twoRow.result}` : ""} · ${fmtMoney.format(two.path[trade])} · 回撤 ${fmtPct(-(twoRow?.drawdown || 0))}</span>`;
+        const xx = geometry.pad.l + trade / Math.max(1, geometry.pathLength - 1) * (geometry.width - geometry.pad.l - geometry.pad.r);
+        tooltip.style.left = `${Math.max(8, Math.min(geometry.width - 238, xx - 112))}px`;
+        tooltip.hidden = false;
+      }
+
+      function hideChartPoint() {
+        state.hoverIndex = null;
+        $("chartTooltip").hidden = true;
+        if (state.results.length) drawChart(state.results);
+      }
+
+      function update() {
+        const inputs = getInputs();
+        state.results = buildScenarios(inputs);
+        state.stress = inputs.strategies.map((strategy, index) => monteCarlo(inputs, strategy, index));
+        state.conservativeStress = state.results.map((scenario, index) => {
+          if (!$("conservativeScenario").checked || !scenario.winRateInterval) return null;
+          return monteCarlo(inputs, { ...inputs.strategies[index], winRate: scenario.winRateInterval.low }, index + 10);
+        });
+        state.hoverIndex = null;
+        $("chartTooltip").hidden = true;
+        const [one, two] = state.results;
+        const realizedOne = one.wins / inputs.trades;
+        const realizedTwo = two.wins / inputs.trades;
+
+        $("roundingNote").textContent = `${inputs.trades} 筆代表路徑：策略 1 為 ${one.wins} 勝 ${one.losses} 敗（${(realizedOne*100).toFixed(1)}%）；策略 2 為 ${two.wins} 勝 ${two.losses} 敗（${(realizedTwo*100).toFixed(1)}%）。`;
+        $("chartRange").textContent = `交易 0 至 ${inputs.trades}`;
+        $("chartText").textContent = `策略 1 月底 ${fmtMoney.format(one.equity)}，最大回撤 ${(one.maxDD*100).toFixed(2)}%；策略 2 月底 ${fmtMoney.format(two.equity)}，最大回撤 ${(two.maxDD*100).toFixed(2)}%。`;
+        $("equityChart").setAttribute("aria-label", $("chartText").textContent);
+
+        renderSizingState(); renderScenarioTabs(); renderConfidence(); renderStress(); renderRiskPlan();
+        $("conservativeStatus").textContent = $("conservativeScenario").checked
+          ? (state.conservativeStress.some(Boolean) ? "已在壓力測試並列 95% 勝率下限。" : "已開啟；請先輸入至少一個策略的歷史樣本數。")
+          : "使用 95% 估計下限，不取代基準勝率。";
+        setMode(state.mode, false);
+        if (state.mode === "comparison") drawChart(state.results);
+        markReverseDirty();
+        persistWorkingState();
+      }
+
+      function updateConfidenceOnly() {
+        const inputs = getInputs();
+        state.results = buildScenarios(inputs);
+        if ($("conservativeScenario").checked) {
+          state.conservativeStress = state.results.map((scenario, index) => scenario.winRateInterval
+            ? monteCarlo(inputs, { ...inputs.strategies[index], winRate: scenario.winRateInterval.low }, index + 10)
+            : null);
+          renderStress();
+        }
+        renderConfidence();
+        $("conservativeStatus").textContent = $("conservativeScenario").checked
+          ? (state.conservativeStress.some(Boolean) ? "已在壓力測試並列 95% 勝率下限。" : "已開啟；請先輸入至少一個策略的歷史樣本數。")
+          : "使用 95% 估計下限，不取代基準勝率。";
+        persistWorkingState();
+      }
+
+      function rememberValidValues() {
+        numericIds.forEach(id => {
+          const input = $(id), rule = fieldRules[id], raw = input.value.trim(), number = Number(raw);
+          if (raw !== "" && Number.isFinite(number) && number >= rule.min && number <= rule.max) lastValidValues[id] = rule.integer ? Math.round(number) : number;
+        });
+      }
+
+      function normalizeNumberField(event) {
+        const input = event.currentTarget, rule = fieldRules[input.id];
+        const raw = input.value.trim(), number = Number(raw);
+        let normalized = raw === "" || !Number.isFinite(number) ? (lastValidValues[input.id] ?? rule.fallback) : clamp(number, rule.min, rule.max);
+        if (rule.integer) normalized = Math.round(normalized);
+        input.value = normalized;
+        lastValidValues[input.id] = normalized;
+        if (input.id === "winRateOne" && $("syncWinRate").checked) {
+          $("winRateTwo").value = normalized;
+          lastValidValues.winRateTwo = normalized;
+        }
+        if (input.id === "sampleSizeOne" || input.id === "sampleSizeTwo") updateConfidenceOnly();
+        else if (riskPlanIds.includes(input.id)) { renderRiskPlan(); persistWorkingState(); }
+        else if (input.id === "targetDrawdown") { markReverseDirty(); persistWorkingState(); }
+        else update();
+      }
+
+      function updateSyncState() {
+        const linked = $("syncWinRate").checked;
+        $("winRateTwo").disabled = linked;
+        $("winRateTwo").setAttribute("aria-disabled", String(linked));
+      }
+
+      function reset() {
+        $("capital").value = defaults.capital; $("tradeCount").value = defaults.trades;
+        $("winRateOne").value = defaults.strategies[0].winRate; $("winRateTwo").value = defaults.strategies[1].winRate;
+        $("riskOne").value = defaults.strategies[0].risk; $("riskTwo").value = defaults.strategies[1].risk;
+        $("rrOne").value = defaults.strategies[0].rr; $("rrTwo").value = defaults.strategies[1].rr;
+        $("sampleSizeOne").value = defaults.strategies[0].sampleSize; $("sampleSizeTwo").value = defaults.strategies[1].sampleSize;
+        $("targetDrawdown").value = defaults.targetDrawdown;
+        $("reverseCoverage").value = defaults.reverseCoverage;
+        $("syncWinRate").checked = false;
+        $("compoundSizing").checked = defaults.compound;
+        $("conservativeScenario").checked = defaults.conservative;
+        Object.entries(defaults.riskPlan).forEach(([id, value]) => { $(id).value = value; });
+        state.reverse = [];
+        state.reverseDirty = true;
+        $("reverseStatus").textContent = "尚未計算。變更策略條件後請重新計算。";
+        $("reverseResults").innerHTML = `<article class="reverse-card"><div class="reverse-card-head"><strong>策略 1</strong><span>等待計算</span></div><span class="reverse-risk-label">建議單筆風險上限</span><span class="reverse-risk-value">—</span></article><article class="reverse-card"><div class="reverse-card-head"><strong>策略 2</strong><span>等待計算</span></div><span class="reverse-risk-label">建議單筆風險上限</span><span class="reverse-risk-value">—</span></article>`;
+        numericIds.forEach(id => { lastValidValues[id] = Number($(id).value); });
+        updateSyncState();
+        update();
+        setMode("comparison", false);
+        persistWorkingState();
+      }
+      function downloadCsv() {
+        const [one, two] = state.results;
+        const rows = [["Trade","Strategy 1 Result","Strategy 1 Equity","Strategy 1 Drawdown","Strategy 2 Result","Strategy 2 Equity","Strategy 2 Drawdown"], ...one.rows.map((r,i) => [r.trade,r.result,r.after.toFixed(2),(r.drawdown*100).toFixed(2)+"%",two.rows[i].result,two.rows[i].after.toFixed(2),(two.rows[i].drawdown*100).toFixed(2)+"%"] )];
+        const csv = "\ufeff" + rows.map(row => row.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
+        const url = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8"}));
+        const a = document.createElement("a"); a.href = url; a.download = $("compoundSizing").checked ? "逐筆複利模擬.csv" : "固定風險金額模擬.csv"; a.click(); URL.revokeObjectURL(url);
+      }
+
+      let updateTimer;
+      const scheduleUpdate = event => {
+        clearTimeout(updateTimer);
+        if (event?.currentTarget?.value.trim() === "") return;
+        updateTimer = setTimeout(() => { rememberValidValues(); update(); }, 160);
+      };
+      const scheduleConfidenceUpdate = event => {
+        clearTimeout(updateTimer);
+        if (event?.currentTarget?.value.trim() === "") return;
+        updateTimer = setTimeout(() => { rememberValidValues(); updateConfidenceOnly(); }, 160);
+      };
+      const scheduleReverseSettingUpdate = event => {
+        clearTimeout(updateTimer);
+        if (event?.currentTarget?.value.trim() === "") return;
+        updateTimer = setTimeout(() => { rememberValidValues(); markReverseDirty(); persistWorkingState(); }, 160);
+      };
+      const scheduleRiskPlanUpdate = event => {
+        clearTimeout(updateTimer);
+        if (event?.currentTarget?.value.trim() === "") return;
+        updateTimer = setTimeout(() => { rememberValidValues(); renderRiskPlan(); persistWorkingState(); }, 120);
+      };
+      function handleSizingChange() {
+        renderSizingState();
+        $("compoundHint").textContent = "正在重新計算全部模型…";
+        $("compoundSizing").disabled = true;
+        setTimeout(() => {
+          update();
+          $("compoundSizing").disabled = false;
+        }, 30);
+      }
+      function handleConservativeChange() {
+        $("conservativeStatus").textContent = $("conservativeScenario").checked ? "正在計算 95% 勝率下限情境…" : "正在移除保守情境…";
+        $("conservativeScenario").disabled = true;
+        setTimeout(() => {
+          update();
+          $("conservativeScenario").disabled = false;
+        }, 30);
+      }
+      ["capital","tradeCount","riskOne","riskTwo","rrOne","rrTwo"].forEach(id => $(id).addEventListener("input", scheduleUpdate));
+      ["sampleSizeOne","sampleSizeTwo"].forEach(id => $(id).addEventListener("input", scheduleConfidenceUpdate));
+      riskPlanIds.forEach(id => $(id).addEventListener("input", scheduleRiskPlanUpdate));
+      $("targetDrawdown").addEventListener("input", scheduleReverseSettingUpdate);
+      $("winRateOne").addEventListener("input", event => { if ($("syncWinRate").checked) $("winRateTwo").value = $("winRateOne").value; scheduleUpdate(event); });
+      $("winRateTwo").addEventListener("input", scheduleUpdate);
+      numericIds.forEach(id => $(id).addEventListener("blur", normalizeNumberField));
+      $("syncWinRate").addEventListener("change", () => { if ($("syncWinRate").checked) $("winRateTwo").value = $("winRateOne").value; updateSyncState(); update(); });
+      $("compoundSizing").addEventListener("change", handleSizingChange);
+      $("conservativeScenario").addEventListener("change", handleConservativeChange);
+      $("reverseCoverage").addEventListener("change", () => { markReverseDirty(); persistWorkingState(); });
+      $("comparisonModeBtn").addEventListener("click", () => setMode("comparison"));
+      $("reverseModeBtn").addEventListener("click", () => setMode("reverse"));
+      $("calculateRiskBtn").addEventListener("click", calculateReverseRisk);
+      $("savePresetBtn").addEventListener("click", savePreset);
+      $("presetList").addEventListener("click", handlePresetAction);
+      $("resetBtn").addEventListener("click", reset);
+      $("printBtn").addEventListener("click", () => window.print());
+      $("csvBtn").addEventListener("click", downloadCsv);
+      const chart = $("equityChart");
+      const chartIndexFromPointer = event => {
+        const rect = chart.getBoundingClientRect();
+        const geometry = state.chartGeometry;
+        if (!geometry) return 0;
+        const x = clamp(event.clientX - rect.left, geometry.pad.l, geometry.width - geometry.pad.r);
+        return Math.round((x - geometry.pad.l) / Math.max(1, geometry.width - geometry.pad.l - geometry.pad.r) * (geometry.pathLength - 1));
+      };
+      chart.addEventListener("pointermove", event => showChartPoint(chartIndexFromPointer(event)));
+      chart.addEventListener("pointerdown", event => showChartPoint(chartIndexFromPointer(event)));
+      chart.addEventListener("pointerleave", event => { if (event.pointerType !== "touch") hideChartPoint(); });
+      document.addEventListener("pointerdown", event => { if (event.target !== chart && event.pointerType === "touch") hideChartPoint(); });
+      chart.addEventListener("focus", () => showChartPoint(state.hoverIndex ?? 0));
+      chart.addEventListener("blur", hideChartPoint);
+      chart.addEventListener("keydown", event => {
+        const last = state.results[0]?.path.length - 1 || 0;
+        let next = state.hoverIndex ?? 0;
+        if (event.key === "ArrowRight") next += 1;
+        else if (event.key === "ArrowLeft") next -= 1;
+        else if (event.key === "Home") next = 0;
+        else if (event.key === "End") next = last;
+        else return;
+        event.preventDefault(); showChartPoint(clamp(next, 0, last));
+      });
+      let resizeTimer;
+      window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(hideChartPoint, 100); });
+
+      const workingState = readStoredJson(storageKeys.working, null);
+      if (!applySettings(workingState)) reset();
+      renderPresets();
+      initializing = false;
+      persistWorkingState();
+    })();
+  </script>
+</body>
+</html>
