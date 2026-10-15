@@ -10,17 +10,18 @@
       --ink: #102a43;
       --ink-2: #334e68;
       --muted: #5b7083;
-      --paper: #f6f8fb;
+      --paper: #f2f5f8;
       --surface: #ffffff;
       --line: #d9e2ec;
-      --navy: #12304a;
-      --blue: #2266d6;
+      --navy: #102a43;
+      --blue: #2563d9;
       --blue-soft: #e9f1ff;
       --green: #147d4a;
       --green-soft: #e8f6ef;
       --red: #b42318;
       --red-soft: #fff0ee;
-      --amber: #8a5a00;
+      --amber: #a05f00;
+      --copper: #b96822;
       --amber-soft: #fff6db;
       --shadow: 0 18px 50px rgba(16, 42, 67, .08);
       --radius: 18px;
@@ -45,7 +46,7 @@
     button, input, select { font: inherit; }
     button { cursor: pointer; touch-action: manipulation; }
     a { color: var(--blue); text-underline-offset: 3px; }
-    :focus-visible { outline: 3px solid rgba(34, 102, 214, .38); outline-offset: 3px; }
+    :focus-visible { outline: 3px solid white; outline-offset: 2px; box-shadow: 0 0 0 5px var(--blue); }
     button, input, summary, a { scroll-margin-top: 82px; }
     .skip-link { position: fixed; z-index: 99; top: 8px; left: 8px; padding: 10px 14px; border-radius: 8px; background: white; color: var(--navy); font-weight: 800; transform: translateY(-160%); }
     .skip-link:focus { transform: translateY(0); }
@@ -255,12 +256,12 @@
     }
 
     /* Simplified working surface */
-    body { background: #f4f7fa; }
+    body { background-color: var(--paper); font-variant-numeric: tabular-nums; }
     .topbar-inner, main { width: min(1180px, calc(100% - 32px)); }
-    .topbar { position: static; background: var(--navy); }
+    .topbar { position: sticky; background: rgba(16, 42, 67, .97); box-shadow: 0 8px 24px rgba(16, 42, 67, .14); }
     .brand strong { font-size: 15px; }
-    main { padding: 24px 0 52px; }
-    .compact-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 18px; }
+    main { padding: 20px 0 52px; }
+    .compact-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 14px; padding: 8px 2px 0; }
     .compact-intro h1 { margin: 0; font-size: clamp(26px, 4vw, 38px); line-height: 1.1; letter-spacing: -.03em; }
     .compact-intro p { max-width: 600px; margin: 0; color: var(--muted); font-size: 14px; text-align: right; }
     .mode-switch { display: inline-grid; grid-template-columns: repeat(2, minmax(140px, 1fr)); gap: 4px; margin-bottom: 16px; border: 1px solid #b8c7d5; border-radius: 12px; padding: 4px; background: #e9eef4; }
@@ -281,7 +282,7 @@
     .switch-track::after { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: white; box-shadow: 0 2px 5px rgba(16,42,67,.22); content: ""; transition: transform .16s ease; }
     .switch-input:checked + .switch-track { border-color: var(--blue); background: var(--blue); }
     .switch-input:checked + .switch-track::after { transform: translateX(20px); }
-    .switch-input:focus-visible + .switch-track { outline: 3px solid rgba(34,102,214,.38); outline-offset: 3px; }
+    .switch-input:focus-visible + .switch-track { outline: 3px solid white; outline-offset: 2px; box-shadow: 0 0 0 5px var(--blue); }
     .switch-input:disabled + .switch-track { opacity: .58; cursor: wait; }
     .model-note { margin: 9px 2px 20px; color: var(--muted); font-size: 12px; }
     .strategy-config { margin-bottom: 18px; }
@@ -290,7 +291,9 @@
     .sync-control { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink-2); font-size: 13px; cursor: pointer; }
     .sync-control input { width: 18px; height: 18px; accent-color: var(--blue); }
     .strategy-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-    .strategy-input-card { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: white; }
+    .strategy-input-card { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: white; box-shadow: 0 8px 24px rgba(16,42,67,.035); }
+    .strategy-input-card::before { position: absolute; inset: 0 0 auto; height: 3px; background: var(--blue); content: ""; }
+    .strategy-input-card:nth-child(2)::before { background: var(--copper); }
     .strategy-input-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
     .strategy-input-head strong { color: var(--navy); font-size: 15px; }
     .strategy-input-head span { color: var(--muted); font-size: 12px; }
@@ -319,9 +322,9 @@
     .scenario-picker-head strong { color: var(--navy); font-size: 14px; }
     .scenario-picker-head span { color: var(--muted); font-size: 12px; }
     .scenario-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .scenario-tab { min-height: 138px; border: 1px solid var(--line); border-radius: 11px; padding: 14px; background: #f8fafc; color: var(--ink-2); text-align: left; }
+    .scenario-tab { min-height: 138px; border: 1px solid var(--line); border-radius: 11px; padding: 14px; background: #fbfcfe; color: var(--ink-2); text-align: left; }
     .scenario-tab:first-child { border-top: 3px solid var(--blue); }
-    .scenario-tab:last-child { border-top: 3px dashed #c56b1a; }
+    .scenario-tab:last-child { border-top: 3px dashed var(--copper); }
     .strategy-result-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
     .strategy-result-head strong { color: var(--navy); font-size: 15px; }
     .strategy-result-head span { color: var(--muted); font-family: var(--mono); font-size: 12px; }
@@ -335,7 +338,36 @@
     .edge-positive { color: var(--green); }
     .chart-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; }
     .legend.strategy-one::before { background: var(--blue); }
-    .legend.strategy-two::before { height: 0; border-top: 3px dashed #c56b1a; background: transparent; }
+    .legend.strategy-two::before { height: 0; border-top: 3px dashed var(--copper); background: transparent; }
+    .briefing {
+      display: grid;
+      grid-template-columns: minmax(270px, .8fr) minmax(0, 1.35fr);
+      overflow: hidden;
+      border: 1px solid #b8c9d9;
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 14px 34px rgba(16, 42, 67, .07);
+    }
+    .briefing-lead { position: relative; padding: 20px 22px 22px; background: var(--navy); color: white; }
+    .briefing-lead::after { position: absolute; right: -36px; bottom: -58px; width: 150px; height: 150px; border: 1px solid rgba(255,255,255,.12); border-radius: 50%; content: ""; }
+    .briefing-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; color: #bcd2e5; font-family: var(--mono); font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+    .briefing-kicker::before { width: 22px; height: 2px; background: #7fb0ff; content: ""; }
+    .briefing-lead h2 { position: relative; z-index: 1; max-width: 18ch; margin: 0; color: white; font-size: clamp(20px, 2.3vw, 28px); line-height: 1.28; letter-spacing: -.025em; text-wrap: balance; }
+    .briefing-lead p { position: relative; z-index: 1; margin: 12px 0 0; color: #d7e5f0; font-size: 13px; line-height: 1.65; }
+    .briefing-basis { display: block; position: relative; z-index: 1; margin-top: 16px; color: #9fb9ce; font-size: 11px; }
+    .briefing-signals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: stretch; }
+    .signal { min-width: 0; padding: 17px 18px; border-bottom: 1px solid var(--line); }
+    .signal:nth-child(odd) { border-right: 1px solid var(--line); }
+    .signal:nth-last-child(-n+2) { border-bottom: 0; }
+    .signal-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; font-weight: 750; }
+    .signal-winner { border-radius: 999px; padding: 3px 7px; background: var(--blue-soft); color: #174ea6; font-size: 10px; white-space: nowrap; }
+    .signal-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 9px; }
+    .signal-value { min-width: 0; }
+    .signal-value small { display: block; color: var(--muted); font-size: 10px; }
+    .signal-value strong { display: block; overflow-wrap: anywhere; margin-top: 2px; color: var(--ink); font-family: var(--mono); font-size: 15px; }
+    .signal-value.strategy-one strong { color: #174ea6; }
+    .signal-value.strategy-two strong { color: #9a4d14; }
+    .chart-note { flex-basis: 100%; border-top: 1px dashed #cbd6e1; padding-top: 8px; color: #657b8e; }
     .kpi-grid { box-shadow: none; }
     .kpi { min-height: 100px; padding: 15px 17px; }
     .kpi-label { font-size: 14px; }
@@ -414,7 +446,9 @@
     .preset-copy strong { display: block; overflow: hidden; color: var(--navy); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
     .preset-copy span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
     .preset-actions { display: flex; gap: 6px; }
-    .preset-actions .btn { min-height: 40px; padding: 7px 10px; font-size: 12px; }
+    .preset-actions .btn { min-height: 44px; padding: 7px 10px; font-size: 12px; }
+    .preset-file-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .preset-file-tools .btn { min-height: 44px; font-size: 12px; }
     .btn-danger { border-color: #efb3ad; color: var(--red); }
     .risk-plan-intro { margin: 0 0 13px; color: var(--muted); font-size: 12px; }
     .risk-plan-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -428,6 +462,23 @@
     .risk-plan-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; }
     footer { margin-top: 22px; }
 
+    dialog { width: min(520px, calc(100% - 28px)); border: 0; border-radius: 16px; padding: 0; background: white; color: var(--ink); box-shadow: 0 30px 90px rgba(7, 28, 48, .35); }
+    dialog::backdrop { background: rgba(7, 28, 48, .58); backdrop-filter: blur(3px); }
+    .dialog-head { padding: 20px 22px 14px; border-bottom: 1px solid var(--line); }
+    .dialog-head h2 { margin: 0; color: var(--navy); font-size: 20px; }
+    .dialog-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+    .dialog-body { padding: 18px 22px; }
+    .dialog-summary { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .dialog-summary li { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px solid #edf1f5; padding-bottom: 8px; color: var(--muted); font-size: 13px; }
+    .dialog-summary li:last-child { border-bottom: 0; padding-bottom: 0; }
+    .dialog-summary strong { color: var(--ink); font-family: var(--mono); text-align: right; }
+    .dialog-check { display: flex; align-items: flex-start; gap: 9px; min-height: 44px; margin-top: 16px; color: var(--ink-2); font-size: 13px; cursor: pointer; }
+    .dialog-check input { flex: 0 0 auto; width: 18px; height: 18px; accent-color: var(--blue); }
+    .dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 14px 22px 20px; }
+    .dialog-actions .btn { min-width: 96px; }
+    .toast { position: fixed; z-index: 80; right: 18px; bottom: 18px; max-width: min(380px, calc(100% - 36px)); border: 1px solid #9ab2c8; border-radius: 12px; padding: 11px 14px; background: var(--navy); color: white; box-shadow: 0 15px 40px rgba(16,42,67,.25); font-size: 13px; transform: translateY(16px); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+    .toast[data-visible="true"] { transform: translateY(0); opacity: 1; }
+
     @media (max-width: 900px) {
       .quick-controls { grid-template-columns: repeat(2, 1fr); }
       .sizing-control { grid-column: 1 / -1; }
@@ -437,6 +488,8 @@
       .scenario-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .strategy-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .strategy-inputs .field:first-child { grid-column: 1 / -1; }
+      .briefing { grid-template-columns: 1fr; }
+      .briefing-lead h2 { max-width: none; }
     }
     @media (max-width: 640px) {
       .topbar-inner, main { width: min(100% - 24px, 1180px); }
@@ -446,6 +499,9 @@
       .quick-actions { grid-column: auto; }
       .quick-actions .btn { flex: 1; }
       .topbar .btn { font-size: 14px; }
+      .topbar-inner { gap: 8px; }
+      .top-actions { gap: 5px; }
+      .topbar .btn { min-height: 44px; padding-inline: 9px; font-size: 12px; }
       input[type="number"], input[type="text"], select { font-size: 16px; }
       .strategy-section-head { align-items: flex-start; }
       .strategy-settings, .strategy-inputs, .scenario-tabs, .confidence-grid, .risk-plan-fields, .risk-plan-grid { grid-template-columns: 1fr; }
@@ -464,6 +520,17 @@
       .kpi:nth-child(even) { border-right: 0; }
       .kpi:nth-child(3) { border-bottom: 0; }
       #equityChart { height: 240px; }
+      .briefing-signals { grid-template-columns: 1fr; }
+      .signal:nth-child(odd) { border-right: 0; }
+      .signal:nth-last-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .signal:last-child { border-bottom: 0; }
+      .dialog-actions .btn { flex: 1 1 120px; }
+    }
+    @media (max-width: 360px) {
+      .brand strong { font-size: 13px; letter-spacing: 0; }
+      .topbar-inner { gap: 6px; }
+      .topbar .btn { padding-inline: 7px; font-size: 11px; }
+      .top-actions { gap: 4px; }
     }
   </style>
 </head>
@@ -473,6 +540,7 @@
     <div class="topbar-inner">
       <div class="brand"><strong>交易風險試算</strong><span id="sizingBrand">逐單複利</span></div>
       <div class="top-actions">
+        <button class="btn" id="shareBtn" type="button">分享設定</button>
         <button class="btn" id="printBtn" type="button">列印</button>
         <button class="btn" id="csvBtn" type="button">下載 CSV</button>
       </div>
@@ -581,6 +649,16 @@
     </section>
 
     <div class="results" id="comparisonMode">
+      <section class="briefing" aria-labelledby="briefing-title">
+        <div class="briefing-lead">
+          <span class="briefing-kicker">策略判讀</span>
+          <h2 id="briefing-title">正在整理兩個策略的風險差異</h2>
+          <p id="briefing-copy">依目前設定與蒙地卡羅模擬，自動整理報酬潛力、虧損機率與回撤差異。</p>
+          <small class="briefing-basis">依 10,000 次模擬自動整理，不構成投資建議。</small>
+        </div>
+        <div class="briefing-signals" id="briefingSignals" aria-live="polite"></div>
+      </section>
+
       <section class="scenario-picker" aria-labelledby="scenario-picker-title">
         <div class="scenario-picker-head">
           <strong id="scenario-picker-title">雙策略比較</strong>
@@ -590,13 +668,14 @@
       </section>
 
       <section class="panel" aria-labelledby="chart-title">
-        <div class="panel-head"><h2 id="chart-title">兩個策略的逐單淨值</h2><span class="panel-kicker" id="chartRange">交易 0 至 20</span></div>
+        <div class="panel-head"><h2 id="chart-title">固定勝敗代表路徑</h2><span class="panel-kicker" id="chartRange">交易 0 至 20</span></div>
         <div class="chart-wrap">
           <canvas id="equityChart" role="img" tabindex="0" aria-label="策略 1 與策略 2 的逐單淨值比較曲線。聚焦後可用左右方向鍵查看每筆資料。"></canvas>
           <div class="chart-tooltip" id="chartTooltip" role="status" aria-live="polite" hidden></div>
           <div class="chart-caption">
             <span class="chart-legend"><span class="legend strategy-one">策略 1 實線</span><span class="legend strategy-two">策略 2 虛線</span></span>
             <span id="chartText">策略 1 月底 $11,024.37；策略 2 月底 $14,632.53。</span>
+            <span class="chart-note">這條路徑把固定勝敗數盡量平均排列，用來觀察複利變化，不代表風險上下界。主要風險請看上方策略判讀與蒙地卡羅壓力測試。</span>
           </div>
         </div>
       </section>
@@ -680,6 +759,11 @@
             <button class="btn btn-primary" id="savePresetBtn" type="button">儲存目前設定</button>
           </div>
           <p class="preset-status" id="presetStatus" role="status" aria-live="polite">資料只保存在目前瀏覽器，不會上傳。</p>
+          <div class="preset-file-tools">
+            <button class="btn" id="exportPresetsBtn" type="button">匯出備份</button>
+            <button class="btn" id="importPresetsBtn" type="button">匯入備份</button>
+            <input id="presetFileInput" type="file" accept="application/json,.json" hidden>
+          </div>
           <div class="preset-list" id="presetList"></div>
         </div>
       </details>
@@ -696,6 +780,8 @@
             <li>勝率估計範圍使用 Wilson 95% 二項比例區間。它只描述歷史樣本造成的統計不確定性，不包含市場狀態改變、交易相關性或策略失效。</li>
             <li>保守勝率情境會以 Wilson 95% 區間下限另外執行壓力測試，與基準情境並列，不會覆寫主結果。</li>
             <li>風險反推維持使用者輸入的固定勝率，使用相同的 10,000 條隨機路徑與二分搜尋，找出指定回撤分位數下的單筆風險上限；搜尋範圍最高為 10%。</li>
+            <li>分享設定會把目前參數放在網址的片段區段（# 後方），由收件人的瀏覽器讀取，不會傳給 GitHub Pages。分享設定不包含已儲存策略。</li>
+            <li>已儲存策略與最後一次設定保存在目前瀏覽器的 localStorage。網站更新通常不會清除資料；清除網站資料、使用無痕模式、換瀏覽器或換裝置時不會自動帶入，可用 JSON 備份轉移。</li>
             <li>模型未納入手續費、滑價、跳空、停損未成交、部分出場、交易相關性與策略容量。</li>
             <li>風險與盈虧比是簡化假設。實際評估應使用扣除成本後的勝率、平均獲利 R 與平均虧損 R。</li>
           </ul>
@@ -709,6 +795,36 @@
 
     <footer>此模型用於風險教育，不構成投資建議。請用扣除交易成本後的實際紀錄更新勝率與盈虧比分布。</footer>
   </main>
+
+  <dialog id="shareDialog" aria-labelledby="shareDialogTitle">
+    <div class="dialog-head">
+      <h2 id="shareDialogTitle">收到一組分享設定</h2>
+      <p>先確認內容，再決定是否套用。你的已儲存策略不會被更動。</p>
+    </div>
+    <div class="dialog-body"><ul class="dialog-summary" id="shareSummary"></ul></div>
+    <div class="dialog-actions">
+      <button class="btn" id="declineShareBtn" type="button">保留目前設定</button>
+      <button class="btn btn-primary" id="applyShareBtn" type="button">套用分享設定</button>
+    </div>
+  </dialog>
+
+  <dialog id="importDialog" aria-labelledby="importDialogTitle">
+    <div class="dialog-head">
+      <h2 id="importDialogTitle">匯入策略備份</h2>
+      <p id="importDialogCopy">確認備份內容與匯入方式。</p>
+    </div>
+    <div class="dialog-body">
+      <ul class="dialog-summary" id="importSummary"></ul>
+      <label class="dialog-check" for="applyImportedWorking"><input id="applyImportedWorking" type="checkbox">匯入後套用備份當時的畫面設定</label>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn" id="cancelImportBtn" type="button">取消</button>
+      <button class="btn btn-danger" id="replaceImportBtn" type="button">取代現有策略</button>
+      <button class="btn btn-primary" id="mergeImportBtn" type="button">合併策略</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="appToast" role="status" aria-live="polite"></div>
 
   <script>
     (() => {
@@ -724,8 +840,9 @@
         riskPlan: { dailyLossLimit: 3, maxTradesPerDay: 3, stopAfterLosses: 3, maxConcurrentRisk: 2, deRiskDrawdown: 10, deRiskPercent: 50 },
         strategies: [{ winRate: 50, risk: 1, rr: 2, sampleSize: 0 }, { winRate: 50, risk: 2, rr: 3, sampleSize: 0 }]
       };
-      const state = { results: [], stress: [], conservativeStress: [], reverse: [], reverseDirty: true, mode: "comparison", hoverIndex: null, chartGeometry: null };
+      const state = { results: [], stress: [], conservativeStress: [], reverse: [], reverseDirty: true, mode: "comparison", hoverIndex: null, chartGeometry: null, pendingShare: null, pendingImport: null };
       const storageKeys = { working: "trade-risk-model-working-v1", presets: "trade-risk-model-presets-v1" };
+      const backupType = "trade-risk-model-backup";
       let initializing = true;
       const fieldRules = {
         capital: { min: 100, max: 1e9, fallback: 10000 },
@@ -1012,10 +1129,69 @@
             <span class="strategy-result-head"><strong>${s.name}</strong><span>勝率 ${(s.winRate*100).toFixed(1)}% · 風險 ${(s.risk*100).toFixed(1)}% · 1:${s.rr}</span></span>
             <span class="strategy-result-label">${sizingLabel}的固定勝敗模擬</span>
             <span class="strategy-result-value">${fmtMoney.format(s.equity)}</span>
-            <span class="strategy-result-metrics"><span>${s.wins} 勝 ${s.losses} 敗</span><span>報酬 ${fmtPct(s.totalReturn, true)}</span><span class="${s.highRisk ? "risk-alert" : ""}">最大回撤 ${fmtPct(-s.maxDD)}${s.highRisk ? " · 高風險" : ""}</span></span>
+            <span class="strategy-result-metrics"><span>${s.wins} 勝 ${s.losses} 敗</span><span>報酬 ${fmtPct(s.totalReturn, true)}</span><span>代表路徑回撤 ${fmtPct(-s.maxDD)}</span></span>
             <span class="strategy-edge ${s.edge >= 0 ? "edge-positive" : "edge-negative"}">損益兩平勝率 ${(s.breakEven*100).toFixed(1)}% · 勝率差 ${s.winRate-s.breakEven >= 0 ? "+" : "−"}${Math.abs((s.winRate-s.breakEven)*100).toFixed(1)}%</span>
             <span class="strategy-result-foot">機率期望月底 ${fmtMoney.format(s.expectedEquity)} · 每筆期望 ${s.edge >= 0 ? "+" : ""}${s.edge.toFixed(2)}R · ${inputs.compound ? "下一筆" : "固定"} 1R ${fmtMoney.format((inputs.compound ? s.equity : inputs.capital) * s.risk)}</span>
           </article>`).join("");
+      }
+
+      function compareMetric(one, two, preferLower = false, tolerance = .005) {
+        const scale = Math.max(1, Math.abs(one), Math.abs(two));
+        if (Math.abs(one - two) <= scale * tolerance) return -1;
+        const oneWins = preferLower ? one < two : one > two;
+        return oneWins ? 0 : 1;
+      }
+
+      function renderBriefing() {
+        const [one, two] = state.results;
+        const [stressOne, stressTwo] = state.stress;
+        if (!one || !two || !stressOne || !stressTwo) return;
+        const names = [one.name, two.name];
+        const returnLeader = compareMetric(stressOne.medianEnding, stressTwo.medianEnding);
+        const downsideLeader = compareMetric(stressOne.p10Ending, stressTwo.p10Ending);
+        const lossLeader = compareMetric(stressOne.losingMonthProb, stressTwo.losingMonthProb, true, .01);
+        const drawdownLeader = compareMetric(stressOne.p90Drawdown, stressTwo.p90Drawdown, true, .01);
+        const leaderLabel = index => index < 0 ? "結果相近" : names[index];
+        const sameLeader = returnLeader >= 0 && returnLeader === downsideLeader && returnLeader === lossLeader && returnLeader === drawdownLeader;
+        let title;
+        let copy;
+        if ([returnLeader, downsideLeader, lossLeader, drawdownLeader].every(index => index < 0)) {
+          title = "兩個策略的核心模擬結果接近";
+          copy = "目前差異不足以支持明確取捨。可以再比較實際交易成本、樣本數與執行穩定度。";
+        } else if (sameLeader) {
+          title = `${names[returnLeader]} 在四項核心模擬指標都較有利`;
+          copy = "這只代表目前輸入下的模型結果。正式採用前，仍要確認勝率樣本、交易成本與實際執行是否能維持。";
+        } else {
+          const returnText = returnLeader < 0 ? "兩者報酬潛力接近" : `${names[returnLeader]} 的月底資金中位數較高`;
+          const drawdownText = drawdownLeader < 0 ? "兩者回撤接近" : `${names[drawdownLeader]} 的模擬回撤較低`;
+          title = `${returnText}，${drawdownText}`;
+          copy = returnLeader >= 0 && drawdownLeader >= 0 && returnLeader !== drawdownLeader
+            ? `若先控制資金波動，可優先檢視${names[drawdownLeader]}；若先看報酬潛力，可優先檢視${names[returnLeader]}。`
+            : "請把報酬、虧損月份機率與回撤一起看，不要只用單一數字決定風險。";
+        }
+        const cautions = [];
+        state.results.forEach((strategy, index) => {
+          if (strategy.edge < 0) cautions.push(`${strategy.name}目前每筆期望為負值`);
+          if (strategy.risk > .02) cautions.push(`${strategy.name}單筆風險高於 2%`);
+          if (state.stress[index].p90Drawdown >= .20) cautions.push(`${strategy.name}的 90% 模擬最大回撤達 20% 以上`);
+        });
+        if (cautions.length) copy += ` 注意：${cautions.join("；")}。`;
+        $("briefing-title").textContent = title;
+        $("briefing-copy").textContent = copy;
+
+        const signals = [
+          { label: "月底資金中位數", leader: returnLeader, one: fmtMoney.format(stressOne.medianEnding), two: fmtMoney.format(stressTwo.medianEnding) },
+          { label: "較差 10% 月底資金", leader: downsideLeader, one: fmtMoney.format(stressOne.p10Ending), two: fmtMoney.format(stressTwo.p10Ending) },
+          { label: "虧損月份機率", leader: lossLeader, one: fmtSimProbability(stressOne.losingMonthProb), two: fmtSimProbability(stressTwo.losingMonthProb), alertOne: stressOne.losingMonthProb >= .5, alertTwo: stressTwo.losingMonthProb >= .5 },
+          { label: "90% 模擬最大回撤", leader: drawdownLeader, one: fmtPct(-stressOne.p90Drawdown), two: fmtPct(-stressTwo.p90Drawdown), alertOne: stressOne.p90Drawdown >= .10, alertTwo: stressTwo.p90Drawdown >= .10 }
+        ];
+        $("briefingSignals").innerHTML = signals.map(signal => `<div class="signal">
+          <div class="signal-label"><span>${signal.label}</span><span class="signal-winner">${leaderLabel(signal.leader)}</span></div>
+          <div class="signal-values">
+            <span class="signal-value strategy-one"><small>策略 1</small><strong class="${signal.alertOne ? "risk-alert" : ""}">${signal.one}</strong></span>
+            <span class="signal-value strategy-two"><small>策略 2</small><strong class="${signal.alertTwo ? "risk-alert" : ""}">${signal.two}</strong></span>
+          </div>
+        </div>`).join("");
       }
 
       function renderConfidence() {
@@ -1156,34 +1332,63 @@
         };
       }
 
+      function normalizeSettingsData(settings) {
+        if (!settings || typeof settings !== "object" || ![1, 2].includes(Number(settings.version)) || !settings.values || typeof settings.values !== "object") return null;
+        const version = Number(settings.version);
+        const values = {};
+        numericIds.forEach(id => {
+          const rule = fieldRules[id], candidate = Number(settings.values[id]);
+          let next = Number.isFinite(candidate) ? clamp(candidate, rule.min, rule.max) : rule.fallback;
+          if (rule.integer) next = Math.round(next);
+          values[id] = next;
+        });
+        const coverage = Number(settings.reverseCoverage);
+        return {
+          version: 2,
+          mode: settings.mode === "reverse" ? "reverse" : "comparison",
+          values,
+          syncWinRate: Boolean(settings.syncWinRate),
+          compoundSizing: version === 1 ? true : settings.compoundSizing !== false,
+          conservativeScenario: version === 2 && Boolean(settings.conservativeScenario),
+          reverseCoverage: [80, 90, 95].includes(coverage) ? coverage : defaults.reverseCoverage
+        };
+      }
+
       function persistWorkingState() {
         if (!initializing) writeStoredJson(storageKeys.working, captureSettings());
       }
 
       function applySettings(settings) {
-        if (!settings || ![1, 2].includes(settings.version) || !settings.values) return false;
+        const normalized = normalizeSettingsData(settings);
+        if (!normalized) return false;
         numericIds.forEach(id => {
-          const rule = fieldRules[id], candidate = Number(settings.values[id]);
-          let next = Number.isFinite(candidate) ? clamp(candidate, rule.min, rule.max) : rule.fallback;
-          if (rule.integer) next = Math.round(next);
+          const next = normalized.values[id];
           $(id).value = next;
           lastValidValues[id] = next;
         });
-        $("syncWinRate").checked = Boolean(settings.syncWinRate);
-        $("compoundSizing").checked = settings.version === 1 ? true : settings.compoundSizing !== false;
-        $("conservativeScenario").checked = settings.version === 2 && Boolean(settings.conservativeScenario);
-        $("reverseCoverage").value = [80, 90, 95].includes(Number(settings.reverseCoverage)) ? String(settings.reverseCoverage) : String(defaults.reverseCoverage);
+        $("syncWinRate").checked = normalized.syncWinRate;
+        $("compoundSizing").checked = normalized.compoundSizing;
+        $("conservativeScenario").checked = normalized.conservativeScenario;
+        $("reverseCoverage").value = String(normalized.reverseCoverage);
         updateSyncState();
         renderSizingState();
         update();
-        setMode(settings.mode, false);
+        setMode(normalized.mode, false);
         markReverseDirty();
         return true;
       }
 
+      function normalizePreset(item) {
+        if (!item || typeof item !== "object") return null;
+        const name = typeof item.name === "string" ? item.name.trim().slice(0, 40) : "";
+        const settings = normalizeSettingsData(item.settings);
+        if (!name || !settings) return null;
+        return { id: String(item.id || "").slice(0, 100), name, settings };
+      }
+
       function getPresets() {
         const presets = readStoredJson(storageKeys.presets, []);
-        return Array.isArray(presets) ? presets.filter(item => item && item.id && item.name && item.settings) : [];
+        return Array.isArray(presets) ? presets.map(normalizePreset).filter(item => item && item.id) : [];
       }
 
       function renderPresets() {
@@ -1240,6 +1445,191 @@
           $("presetStatus").textContent = `已刪除「${preset.name}」。`;
           renderPresets();
         }
+      }
+
+      let toastTimer;
+      function showToast(message) {
+        const toast = $("appToast");
+        toast.textContent = message;
+        toast.dataset.visible = "true";
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { toast.dataset.visible = "false"; }, 2800);
+      }
+
+      function encodeShareData(settings) {
+        const bytes = new TextEncoder().encode(JSON.stringify(settings));
+        let binary = "";
+        bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+        return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+      }
+
+      function decodeShareData(value) {
+        const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
+        const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
+        const binary = atob(padded);
+        const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+        return JSON.parse(new TextDecoder().decode(bytes));
+      }
+
+      function clearShareHash() {
+        const url = new URL(window.location.href);
+        if (!url.hash.startsWith("#share=")) return;
+        url.hash = "";
+        history.replaceState(null, "", url.toString());
+      }
+
+      async function copyText(value) {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(value);
+          return;
+        }
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const copied = document.execCommand("copy");
+        textarea.remove();
+        if (!copied) throw new Error("copy failed");
+      }
+
+      async function copyShareLink() {
+        const button = $("shareBtn");
+        const url = new URL(window.location.href);
+        url.hash = `share=${encodeShareData(captureSettings())}`;
+        button.disabled = true;
+        try {
+          await copyText(url.toString());
+          showToast("已複製設定連結，可以直接傳給朋友。");
+        } catch (_) {
+          window.prompt("請複製這個設定連結：", url.toString());
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function sharedSettingsSummary(settings) {
+        const values = settings.values;
+        return [
+          ["本金與交易筆數", `${fmtMoney.format(values.capital)} · ${values.tradeCount} 筆`],
+          ["計算方式", settings.compoundSizing ? "逐筆複利" : "固定 1R"],
+          ["策略 1", `勝率 ${values.winRateOne.toFixed(1)}% · 風險 ${values.riskOne.toFixed(1)}% · 1:${values.rrOne}`],
+          ["策略 2", `勝率 ${values.winRateTwo.toFixed(1)}% · 風險 ${values.riskTwo.toFixed(1)}% · 1:${values.rrTwo}`],
+          ["開啟模式", settings.mode === "reverse" ? "風險反推" : "策略比較"]
+        ];
+      }
+
+      function openSharedSettingsFromHash() {
+        const params = new URLSearchParams(window.location.hash.slice(1));
+        const encoded = params.get("share");
+        if (!encoded) return;
+        try {
+          const settings = normalizeSettingsData(decodeShareData(encoded));
+          if (!settings) throw new Error("invalid settings");
+          state.pendingShare = settings;
+          $("shareSummary").innerHTML = sharedSettingsSummary(settings).map(([label, value]) => `<li><span>${label}</span><strong>${value}</strong></li>`).join("");
+          if (!$("shareDialog").open) $("shareDialog").showModal();
+        } catch (_) {
+          clearShareHash();
+          showToast("這個分享連結無法讀取，已保留你目前的設定。");
+        }
+      }
+
+      function applySharedSettings() {
+        if (!state.pendingShare) return;
+        applySettings(state.pendingShare);
+        persistWorkingState();
+        state.pendingShare = null;
+        $("shareDialog").close();
+        clearShareHash();
+        showToast("已套用分享設定。原本儲存的策略沒有更動。");
+      }
+
+      function declineSharedSettings() {
+        state.pendingShare = null;
+        $("shareDialog").close();
+        clearShareHash();
+        showToast("已保留目前設定。");
+      }
+
+      function downloadJson(filename, value) {
+        const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: "application/json;charset=utf-8" }));
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.click();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
+
+      function exportPresetBackup() {
+        const presets = getPresets();
+        const backup = { type: backupType, version: 1, exportedAt: new Date().toISOString(), working: captureSettings(), presets };
+        const date = new Date().toISOString().slice(0, 10);
+        downloadJson(`交易策略備份-${date}.json`, backup);
+        $("presetStatus").textContent = `已匯出 ${presets.length} 組已儲存策略，並附上目前畫面設定。`;
+      }
+
+      function preparePresetImport(event) {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file) return;
+        if (file.size > 1024 * 1024) {
+          $("presetStatus").textContent = "備份檔超過 1 MB，請確認是否選錯檔案。";
+          return;
+        }
+        file.text().then(text => {
+          const parsed = JSON.parse(text);
+          if (!parsed || parsed.type !== backupType || Number(parsed.version) !== 1 || !Array.isArray(parsed.presets)) throw new Error("unsupported backup");
+          const normalizedPresets = parsed.presets.map(normalizePreset).filter(Boolean);
+          const working = normalizeSettingsData(parsed.working);
+          if (!normalizedPresets.length && !working) throw new Error("empty backup");
+          const existingNames = new Set(getPresets().map(item => item.name.toLocaleLowerCase()));
+          const duplicateCount = normalizedPresets.filter(item => existingNames.has(item.name.toLocaleLowerCase())).length;
+          const skippedCount = parsed.presets.length - normalizedPresets.length;
+          state.pendingImport = { presets: normalizedPresets, working };
+          $("importSummary").innerHTML = [
+            ["可匯入策略", `${normalizedPresets.length} 組`],
+            ["同名策略", duplicateCount ? `${duplicateCount} 組，合併時會更新` : "沒有"],
+            ["無效資料", skippedCount ? `${skippedCount} 組將略過` : "沒有"],
+            ["畫面設定", working ? "備份內含一份" : "未包含"]
+          ].map(([label, value]) => `<li><span>${label}</span><strong>${value}</strong></li>`).join("");
+          $("applyImportedWorking").checked = false;
+          $("applyImportedWorking").disabled = !working;
+          $("replaceImportBtn").disabled = normalizedPresets.length === 0;
+          $("importDialog").showModal();
+        }).catch(() => {
+          $("presetStatus").textContent = "無法讀取這個備份檔。請選擇由本網站匯出的 JSON。";
+        });
+      }
+
+      function commitPresetImport(mode) {
+        const pending = state.pendingImport;
+        if (!pending) return;
+        const merged = mode === "replace" ? [] : getPresets();
+        const indexByName = new Map(merged.map((item, index) => [item.name.toLocaleLowerCase(), index]));
+        pending.presets.forEach(item => {
+          const key = item.name.toLocaleLowerCase();
+          const existingIndex = indexByName.get(key);
+          if (existingIndex === undefined) {
+            indexByName.set(key, merged.length);
+            merged.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: item.name, settings: item.settings });
+          } else {
+            merged[existingIndex] = { ...merged[existingIndex], name: item.name, settings: item.settings };
+          }
+        });
+        if (!writeStoredJson(storageKeys.presets, merged)) {
+          $("presetStatus").textContent = "目前瀏覽器無法寫入備份資料。";
+          return;
+        }
+        if ($("applyImportedWorking").checked && pending.working) applySettings(pending.working);
+        persistWorkingState();
+        renderPresets();
+        state.pendingImport = null;
+        $("importDialog").close();
+        $("presetStatus").textContent = `${mode === "replace" ? "已取代" : "已合併"}策略備份，目前共有 ${merged.length} 組已儲存策略。`;
+        showToast("策略備份已匯入。");
       }
 
       function drawChart(scenarios) {
@@ -1345,7 +1735,7 @@
         $("chartText").textContent = `策略 1 月底 ${fmtMoney.format(one.equity)}，最大回撤 ${(one.maxDD*100).toFixed(2)}%；策略 2 月底 ${fmtMoney.format(two.equity)}，最大回撤 ${(two.maxDD*100).toFixed(2)}%。`;
         $("equityChart").setAttribute("aria-label", $("chartText").textContent);
 
-        renderSizingState(); renderScenarioTabs(); renderConfidence(); renderStress(); renderRiskPlan();
+        renderSizingState(); renderBriefing(); renderScenarioTabs(); renderConfidence(); renderStress(); renderRiskPlan();
         $("conservativeStatus").textContent = $("conservativeScenario").checked
           ? (state.conservativeStress.some(Boolean) ? "已在壓力測試並列 95% 勝率下限。" : "已開啟；請先輸入至少一個策略的歷史樣本數。")
           : "使用 95% 估計下限，不取代基準勝率。";
@@ -1485,6 +1875,17 @@
       $("calculateRiskBtn").addEventListener("click", calculateReverseRisk);
       $("savePresetBtn").addEventListener("click", savePreset);
       $("presetList").addEventListener("click", handlePresetAction);
+      $("shareBtn").addEventListener("click", copyShareLink);
+      $("applyShareBtn").addEventListener("click", applySharedSettings);
+      $("declineShareBtn").addEventListener("click", declineSharedSettings);
+      $("shareDialog").addEventListener("cancel", event => { event.preventDefault(); declineSharedSettings(); });
+      $("exportPresetsBtn").addEventListener("click", exportPresetBackup);
+      $("importPresetsBtn").addEventListener("click", () => $("presetFileInput").click());
+      $("presetFileInput").addEventListener("change", preparePresetImport);
+      $("cancelImportBtn").addEventListener("click", () => { state.pendingImport = null; $("importDialog").close(); });
+      $("mergeImportBtn").addEventListener("click", () => commitPresetImport("merge"));
+      $("replaceImportBtn").addEventListener("click", () => commitPresetImport("replace"));
+      $("importDialog").addEventListener("cancel", () => { state.pendingImport = null; });
       $("resetBtn").addEventListener("click", reset);
       $("printBtn").addEventListener("click", () => window.print());
       $("csvBtn").addEventListener("click", downloadCsv);
@@ -1520,6 +1921,8 @@
       renderPresets();
       initializing = false;
       persistWorkingState();
+      openSharedSettingsFromHash();
+      window.addEventListener("hashchange", openSharedSettingsFromHash);
     })();
   </script>
 </body>
