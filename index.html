@@ -740,23 +740,23 @@
           <div class="risk-plan-fields">
             <div class="field">
               <label for="dailyLossLimit">每日最大虧損 <span>0% = 關閉</span></label>
-              <div class="input-wrap"><input id="dailyLossLimit" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="3"><span class="suffix">%</span></div>
+              <div class="input-wrap"><input id="dailyLossLimit" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="0"><span class="suffix">%</span></div>
             </div>
             <div class="field">
               <label for="maxTradesPerDay">每日最多交易 <span>0 = 關閉</span></label>
-              <input id="maxTradesPerDay" type="number" inputmode="numeric" min="0" max="50" step="1" value="3">
+              <input id="maxTradesPerDay" type="number" inputmode="numeric" min="0" max="50" step="1" value="0">
             </div>
             <div class="field">
               <label for="stopAfterLosses">連續虧損停手 <span>0 = 關閉</span></label>
-              <input id="stopAfterLosses" type="number" inputmode="numeric" min="0" max="20" step="1" value="3">
+              <input id="stopAfterLosses" type="number" inputmode="numeric" min="0" max="20" step="1" value="0">
             </div>
             <div class="field">
               <label for="maxConcurrentRisk">同時持倉總風險 <span>0% = 關閉</span></label>
-              <div class="input-wrap"><input id="maxConcurrentRisk" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="2"><span class="suffix">%</span></div>
+              <div class="input-wrap"><input id="maxConcurrentRisk" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="0"><span class="suffix">%</span></div>
             </div>
             <div class="field">
               <label for="deRiskDrawdown">回撤達到後縮小風險 <span>0% = 關閉</span></label>
-              <div class="input-wrap"><input id="deRiskDrawdown" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="10"><span class="suffix">%</span></div>
+              <div class="input-wrap"><input id="deRiskDrawdown" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="0"><span class="suffix">%</span></div>
             </div>
             <div class="field">
               <label for="deRiskPercent">縮小為原風險 <span>10% 至 100%</span></label>
@@ -857,7 +857,7 @@
         conservative: false,
         targetDrawdown: 15,
         reverseCoverage: 90,
-        riskPlan: { dailyLossLimit: 3, maxTradesPerDay: 3, stopAfterLosses: 3, maxConcurrentRisk: 2, deRiskDrawdown: 10, deRiskPercent: 50 },
+        riskPlan: { dailyLossLimit: 0, maxTradesPerDay: 0, stopAfterLosses: 0, maxConcurrentRisk: 0, deRiskDrawdown: 0, deRiskPercent: 50 },
         strategies: [{ winRate: 50, risk: 1, rr: 2, sampleSize: 0 }, { winRate: 50, risk: 2, rr: 3, sampleSize: 0 }]
       };
       const state = { results: [], stress: [], conservativeStress: [], reverse: [], reverseDirty: true, mode: "comparison", hoverIndex: null, chartGeometry: null, pendingShare: null, pendingImport: null };
@@ -963,11 +963,11 @@
         sampleSizeOne: { min: 0, max: 100000, fallback: 0, integer: true },
         sampleSizeTwo: { min: 0, max: 100000, fallback: 0, integer: true },
         targetDrawdown: { min: 1, max: 80, fallback: 15 },
-        dailyLossLimit: { min: 0, max: 100, fallback: 3 },
-        maxTradesPerDay: { min: 0, max: 50, fallback: 3, integer: true },
-        stopAfterLosses: { min: 0, max: 20, fallback: 3, integer: true },
-        maxConcurrentRisk: { min: 0, max: 100, fallback: 2 },
-        deRiskDrawdown: { min: 0, max: 100, fallback: 10 },
+        dailyLossLimit: { min: 0, max: 100, fallback: 0 },
+        maxTradesPerDay: { min: 0, max: 50, fallback: 0, integer: true },
+        stopAfterLosses: { min: 0, max: 20, fallback: 0, integer: true },
+        maxConcurrentRisk: { min: 0, max: 100, fallback: 0 },
+        deRiskDrawdown: { min: 0, max: 100, fallback: 0 },
         deRiskPercent: { min: 10, max: 100, fallback: 50 }
       };
       const numericIds = Object.keys(fieldRules);
@@ -1343,17 +1343,20 @@
 
       function getRiskPlan() {
         return {
-          dailyLossLimit: clamp(val("dailyLossLimit", 3), 0, 100) / 100,
-          maxTradesPerDay: Math.round(clamp(val("maxTradesPerDay", 3), 0, 50)),
-          stopAfterLosses: Math.round(clamp(val("stopAfterLosses", 3), 0, 20)),
-          maxConcurrentRisk: clamp(val("maxConcurrentRisk", 2), 0, 100) / 100,
-          deRiskDrawdown: clamp(val("deRiskDrawdown", 10), 0, 100) / 100,
+          dailyLossLimit: clamp(val("dailyLossLimit", 0), 0, 100) / 100,
+          maxTradesPerDay: Math.round(clamp(val("maxTradesPerDay", 0), 0, 50)),
+          stopAfterLosses: Math.round(clamp(val("stopAfterLosses", 0), 0, 20)),
+          maxConcurrentRisk: clamp(val("maxConcurrentRisk", 0), 0, 100) / 100,
+          deRiskDrawdown: clamp(val("deRiskDrawdown", 0), 0, 100) / 100,
           deRiskPercent: clamp(val("deRiskPercent", 50), 10, 100) / 100
         };
       }
 
       function renderRiskPlan() {
         const inputs = getInputs(), plan = getRiskPlan();
+        const reductionInactive = plan.deRiskDrawdown === 0;
+        $("deRiskPercent").disabled = reductionInactive;
+        $("deRiskPercent").setAttribute("aria-disabled", String(reductionInactive));
         $("riskPlanSummary").innerHTML = inputs.strategies.map(strategy => {
           const dailyLosses = plan.dailyLossLimit > 0 && strategy.risk > 0 ? Math.floor(plan.dailyLossLimit / strategy.risk + 1e-9) : null;
           const concurrentPositions = plan.maxConcurrentRisk > 0 && strategy.risk > 0 ? Math.floor(plan.maxConcurrentRisk / strategy.risk + 1e-9) : null;
@@ -2029,6 +2032,10 @@
       window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(hideChartPoint, 100); });
 
       const workingState = readStoredJson(storageKeys.working, null);
+      const legacyRiskPlanDefaults = { dailyLossLimit: 3, maxTradesPerDay: 3, stopAfterLosses: 3, maxConcurrentRisk: 2, deRiskDrawdown: 10, deRiskPercent: 50 };
+      if (workingState?.values && Object.entries(legacyRiskPlanDefaults).every(([id, value]) => Number(workingState.values[id]) === value)) {
+        Object.assign(workingState.values, defaults.riskPlan);
+      }
       if (!applySettings(workingState)) reset();
       renderPresets();
       initializing = false;
