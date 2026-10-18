@@ -883,19 +883,73 @@
       function animateModePanel(panel) {
         if (!canAnimate() || !panel) return;
         if (typeof window.gsap !== "undefined") {
-          window.gsap.killTweensOf(panel);
-          window.gsap.fromTo(panel, { autoAlpha: .55, y: 10 }, { autoAlpha: 1, y: 0, duration: .28, ease: "power1.out", overwrite: "auto", clearProps: "opacity,visibility,transform" });
+          const targets = [document.querySelector(".intro-copy"), panel].filter(Boolean);
+          window.gsap.killTweensOf(targets);
+          window.gsap.fromTo(targets, { autoAlpha: .45, y: 14 }, { autoAlpha: 1, y: 0, duration: .38, ease: "power2.out", stagger: .055, overwrite: "auto", clearProps: "opacity,visibility,transform" });
         } else animateWithCss(panel);
       }
-      function animateResults() {
-        if (!canAnimate() || initializing || typeof document.querySelectorAll !== "function") return;
-        const targets = document.querySelectorAll("#briefing-title, #briefing-copy, .signal-value strong, .strategy-result-value");
-        if (typeof window.gsap !== "undefined") {
-          window.gsap.killTweensOf(targets);
-          window.gsap.fromTo(targets, { autoAlpha: .55, y: 6 }, { autoAlpha: 1, y: 0, duration: .24, ease: "power1.out", stagger: .018, overwrite: "auto", clearProps: "opacity,visibility,transform" });
-        } else {
-          targets.forEach((target, index) => animateWithCss(target, index * 18));
+      function animateInitialView() {
+        if (!canAnimate() || typeof document.querySelectorAll !== "function") return;
+        const groups = [
+          document.querySelectorAll(".topbar-inner > *"),
+          document.querySelectorAll(".compact-intro > *"),
+          document.querySelectorAll(".quick-controls > *"),
+          document.querySelectorAll(".strategy-section-head > *, .strategy-input-card, #confidenceDetails"),
+          document.querySelectorAll(state.mode === "comparison" ? ".briefing > *" : "#reverseMode > *")
+        ];
+        if (typeof window.gsap === "undefined") {
+          groups.flatMap(group => Array.from(group)).forEach((target, index) => animateWithCss(target, Math.min(index * 24, 240)));
+          return;
         }
+        const gsap = window.gsap;
+        const timeline = gsap.timeline({ defaults: { ease: "power2.out", overwrite: "auto" } });
+        timeline
+          .fromTo(groups[0], { autoAlpha: 0, y: -8 }, { autoAlpha: 1, y: 0, duration: .3, stagger: .045, clearProps: "opacity,visibility,transform" })
+          .fromTo(groups[1], { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: .42, stagger: .065, clearProps: "opacity,visibility,transform" }, "-=.18")
+          .fromTo(groups[2], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: .36, stagger: .035, clearProps: "opacity,visibility,transform" }, "-=.23")
+          .fromTo(groups[3], { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: .36, stagger: .035, clearProps: "opacity,visibility,transform" }, "-=.22")
+          .fromTo(groups[4], { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: .42, stagger: .05, clearProps: "opacity,visibility,transform" }, "-=.2");
+      }
+      function animateResults() {
+        if (!canAnimate() || initializing || state.mode !== "comparison" || typeof document.querySelectorAll !== "function") return;
+        const lead = document.querySelector(".briefing-lead");
+        const signals = document.querySelectorAll(".briefing-signals .signal");
+        const cards = document.querySelectorAll(".scenario-tab");
+        const chart = $("equityChart");
+        if (typeof window.gsap !== "undefined") {
+          const gsap = window.gsap;
+          const targets = [lead, ...signals, ...cards, chart].filter(Boolean);
+          gsap.killTweensOf(targets);
+          gsap.timeline({ defaults: { ease: "power2.out", overwrite: "auto" } })
+            .fromTo(lead, { autoAlpha: .68, x: -9 }, { autoAlpha: 1, x: 0, duration: .32, clearProps: "opacity,visibility,transform" })
+            .fromTo(signals, { autoAlpha: .5, y: 9 }, { autoAlpha: 1, y: 0, duration: .3, stagger: .025, clearProps: "opacity,visibility,transform" }, "<.03")
+            .fromTo(cards, { autoAlpha: .55, y: 10, scale: .99 }, { autoAlpha: 1, y: 0, scale: 1, duration: .34, stagger: .045, clearProps: "opacity,visibility,transform" }, "<.04")
+            .fromTo(chart, { autoAlpha: .65, scaleX: .985 }, { autoAlpha: 1, scaleX: 1, transformOrigin: "left center", duration: .38, clearProps: "opacity,visibility,transform,transformOrigin" }, "<.02");
+        } else {
+          [lead, ...signals, ...cards, chart].filter(Boolean).forEach((target, index) => animateWithCss(target, index * 20));
+        }
+      }
+      function animateReverseResults() {
+        if (!canAnimate() || typeof document.querySelectorAll !== "function") return;
+        const cards = document.querySelectorAll(".reverse-card");
+        if (typeof window.gsap !== "undefined") {
+          window.gsap.killTweensOf(cards);
+          window.gsap.fromTo(cards, { autoAlpha: .45, y: 14, scale: .985 }, { autoAlpha: 1, y: 0, scale: 1, duration: .42, ease: "power2.out", stagger: .07, overwrite: "auto", clearProps: "opacity,visibility,transform" });
+        } else cards.forEach((card, index) => animateWithCss(card, index * 55));
+      }
+      function bindDisclosureMotion() {
+        if (typeof document.querySelectorAll !== "function") return;
+        document.querySelectorAll(".confidence-settings, .disclosure-stack details").forEach(details => {
+          details.addEventListener("toggle", () => {
+            if (!details.open || !canAnimate()) return;
+            const content = details.querySelector(".confidence-content, .disclosure-content");
+            if (!content) return;
+            if (typeof window.gsap !== "undefined") {
+              window.gsap.killTweensOf(content);
+              window.gsap.fromTo(content, { autoAlpha: .35, y: -8 }, { autoAlpha: 1, y: 0, duration: .32, ease: "power2.out", overwrite: "auto", clearProps: "opacity,visibility,transform" });
+            } else animateWithCss(content);
+          });
+        });
       }
       const fieldRules = {
         capital: { min: 100, max: 1e9, fallback: 10000 },
@@ -1166,6 +1220,7 @@
           state.reverse = inputs.strategies.map((strategy, index) => reverseRiskLimit(inputs, strategy, index, settings.targetDrawdown, settings.coverage));
           state.reverseDirty = false;
           renderReverseResults(inputs, settings);
+          animateReverseResults();
           $("reverseStatus").textContent = `完成：目標回撤 ${fmtPct(-settings.targetDrawdown)}，要求 ${Math.round(settings.coverage * 100)}% 模擬月份不超標。這是模型估計，不是保證。`;
           button.disabled = false;
           button.textContent = "重新計算";
@@ -1977,7 +2032,8 @@
       if (!applySettings(workingState)) reset();
       renderPresets();
       initializing = false;
-      animateModePanel(state.mode === "comparison" ? $("comparisonMode") : $("reverseMode"));
+      bindDisclosureMotion();
+      animateInitialView();
       persistWorkingState();
       openSharedSettingsFromHash();
       window.addEventListener("hashchange", openSharedSettingsFromHash);
